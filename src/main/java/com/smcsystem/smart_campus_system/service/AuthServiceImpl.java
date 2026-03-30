@@ -2,10 +2,14 @@ package com.smcsystem.smart_campus_system.service;
 
 import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
+import com.smcsystem.smart_campus_system.dto.response.UserResponse;
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.exception.BadRequestException;
+import com.smcsystem.smart_campus_system.exception.ResourceNotFoundException;
 import com.smcsystem.smart_campus_system.exception.UnauthorizedException;
 import com.smcsystem.smart_campus_system.model.User;
 import com.smcsystem.smart_campus_system.repository.UserRepository;
@@ -16,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -129,6 +135,55 @@ public class AuthServiceImpl implements AuthService {
                 .authProvider(user.getAuthProvider())
                 .pictureUrl(user.getPictureUrl())
                 .profileCompleted(user.getUserType() != null)
+                .build();
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::mapToUserResponse)
+                .toList();
+    }
+
+    @Override
+    public UserResponse updateUserRole(String userId, UpdateUserRoleRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setRole(request.getRole());
+        User updatedUser = userRepository.save(user);
+
+        return mapToUserResponse(updatedUser);
+    }
+
+    @Override
+    public UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setIsActive(request.getIsActive());
+        User updatedUser = userRepository.save(user);
+
+        return mapToUserResponse(updatedUser);
+    }
+
+    private UserResponse mapToUserResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .userType(user.getUserType())
+                .authProvider(user.getAuthProvider())
+                .pictureUrl(user.getPictureUrl())
+                .phoneNumber(user.getPhoneNumber())
+                .department(user.getDepartment())
+                .isActive(user.getIsActive())
+                .emailVerified(user.getEmailVerified())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .lastLoginAt(user.getLastLoginAt())
                 .build();
     }
 }

@@ -2,7 +2,12 @@ package com.smcsystem.smart_campus_system.service;
 
 import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
+import com.smcsystem.smart_campus_system.dto.response.UserResponse;
+
+import java.util.List;
 
 public interface AuthService {
 
@@ -11,4 +16,10 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
 
     AuthResponse getCurrentUser();
+
+    List<UserResponse> getAllUsers();
+
+    UserResponse updateUserRole(String userId, UpdateUserRoleRequest request);
+
+    UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request);
 }
