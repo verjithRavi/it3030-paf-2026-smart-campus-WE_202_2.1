@@ -1,6 +1,7 @@
 HELP.md
 target/
 .env
+application-local.properties
 *.log
 *.class
 *.jar
