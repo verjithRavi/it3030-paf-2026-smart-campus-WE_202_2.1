@@ -12,6 +12,8 @@ import com.smcsystem.smart_campus_system.repository.UserRepository;
 import com.smcsystem.smart_campus_system.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -106,6 +108,27 @@ public class AuthServiceImpl implements AuthService {
                 .authProvider(updatedUser.getAuthProvider())
                 .pictureUrl(updatedUser.getPictureUrl())
                 .profileCompleted(updatedUser.getUserType() != null)
+                .build();
+    }
+
+    @Override
+    public AuthResponse getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+
+        return AuthResponse.builder()
+                .token(null)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .userType(user.getUserType())
+                .authProvider(user.getAuthProvider())
+                .pictureUrl(user.getPictureUrl())
+                .profileCompleted(user.getUserType() != null)
                 .build();
     }
 }
