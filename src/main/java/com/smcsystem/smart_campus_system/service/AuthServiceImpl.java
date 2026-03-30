@@ -68,6 +68,30 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        throw new UnauthorizedException("Login not implemented yet");
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new UnauthorizedException("Your account is inactive");
+        }
+
+        if (user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
+        user.setLastLoginAt(java.time.LocalDateTime.now());
+        User updatedUser = userRepository.save(user);
+
+        return AuthResponse.builder()
+                .token(null)
+                .userId(updatedUser.getId())
+                .name(updatedUser.getName())
+                .email(updatedUser.getEmail())
+                .role(updatedUser.getRole())
+                .userType(updatedUser.getUserType())
+                .authProvider(updatedUser.getAuthProvider())
+                .pictureUrl(updatedUser.getPictureUrl())
+                .profileCompleted(updatedUser.getUserType() != null)
+                .build();
     }
 }
