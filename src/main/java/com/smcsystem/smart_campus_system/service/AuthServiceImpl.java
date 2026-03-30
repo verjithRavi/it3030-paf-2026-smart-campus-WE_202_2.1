@@ -9,6 +9,7 @@ import com.smcsystem.smart_campus_system.exception.BadRequestException;
 import com.smcsystem.smart_campus_system.exception.UnauthorizedException;
 import com.smcsystem.smart_campus_system.model.User;
 import com.smcsystem.smart_campus_system.repository.UserRepository;
+import com.smcsystem.smart_campus_system.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -53,8 +55,14 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Email is already registered");
         }
 
+        String token = jwtService.generateToken(
+                savedUser.getEmail(),
+                savedUser.getId(),
+                savedUser.getRole().name()
+        );
+
         return AuthResponse.builder()
-                .token(null)
+                .token(token)
                 .userId(savedUser.getId())
                 .name(savedUser.getName())
                 .email(savedUser.getEmail())
@@ -82,8 +90,14 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(java.time.LocalDateTime.now());
         User updatedUser = userRepository.save(user);
 
+        String token = jwtService.generateToken(
+                updatedUser.getEmail(),
+                updatedUser.getId(),
+                updatedUser.getRole().name()
+        );
+
         return AuthResponse.builder()
-                .token(null)
+                .token(token)
                 .userId(updatedUser.getId())
                 .name(updatedUser.getName())
                 .email(updatedUser.getEmail())
