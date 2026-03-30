@@ -8,6 +8,7 @@ import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
 import com.smcsystem.smart_campus_system.dto.response.UserResponse;
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
 import com.smcsystem.smart_campus_system.enums.Role;
+import com.smcsystem.smart_campus_system.enums.UserType;
 import com.smcsystem.smart_campus_system.exception.BadRequestException;
 import com.smcsystem.smart_campus_system.exception.ResourceNotFoundException;
 import com.smcsystem.smart_campus_system.exception.UnauthorizedException;
@@ -152,6 +153,21 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         user.setRole(request.getRole());
+
+        if (request.getRole() == Role.ADMIN || request.getRole() == Role.TECHNICIAN) {
+            user.setUserType(null);
+        } else if (request.getRole() == Role.USER) {
+            if (request.getUserType() == null) {
+                throw new BadRequestException("User type is required when role is USER");
+            }
+
+            if (request.getUserType() != UserType.STUDENT && request.getUserType() != UserType.LECTURER) {
+                throw new BadRequestException("User type must be STUDENT or LECTURER when role is USER");
+            }
+
+            user.setUserType(request.getUserType());
+        }
+
         User updatedUser = userRepository.save(user);
 
         return mapToUserResponse(updatedUser);
