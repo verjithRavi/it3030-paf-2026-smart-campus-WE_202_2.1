@@ -1,12 +1,17 @@
 package com.smcsystem.smart_campus_system.service;
 
+import com.smcsystem.smart_campus_system.dto.request.CreateManagedUserRequest;
 import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
+import com.smcsystem.smart_campus_system.dto.request.SubmitAccessRequestRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateApprovalStatusRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
 import com.smcsystem.smart_campus_system.dto.response.UserResponse;
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
+import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
+import com.smcsystem.smart_campus_system.enums.RegistrationType;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
 import com.smcsystem.smart_campus_system.exception.BadRequestException;
@@ -44,17 +49,24 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Email is already registered");
         }
 
+        UserType userType = mapRegistrationTypeToUserType(request.getRegistrationType());
+        ApprovalStatus approvalStatus =
+                request.getRegistrationType() == RegistrationType.NORMAL_USER
+                        ? ApprovalStatus.APPROVED
+                        : ApprovalStatus.PENDING;
+
         User user = User.builder()
                 .name(request.getName())
                 .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
-                .userType(request.getUserType())
+                .userType(userType)
                 .authProvider(AuthProvider.LOCAL)
                 .phoneNumber(request.getPhoneNumber())
                 .department(request.getDepartment())
                 .isActive(true)
                 .emailVerified(true)
+                .approvalStatus(approvalStatus)
                 .build();
 
         User savedUser;
@@ -64,23 +76,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Email is already registered");
         }
 
-        String token = jwtService.generateToken(
-                savedUser.getEmail(),
-                savedUser.getId(),
-                savedUser.getRole().name()
-        );
-
-        return AuthResponse.builder()
-                .token(token)
-                .userId(savedUser.getId())
-                .name(savedUser.getName())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole())
-                .userType(savedUser.getUserType())
-                .authProvider(savedUser.getAuthProvider())
-                .pictureUrl(savedUser.getPictureUrl())
-                .profileCompleted(true)
-                .build();
+        return buildAuthResponse(savedUser, approvalStatus == ApprovalStatus.APPROVED);
     }
 
     @Override
@@ -92,6 +88,14 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Your account is inactive");
         }
 
+        if (user.getApprovalStatus() == ApprovalStatus.PENDING) {
+            throw new UnauthorizedException("Your account is waiting for admin approval");
+        }
+
+        if (user.getApprovalStatus() == ApprovalStatus.REJECTED) {
+            throw new UnauthorizedException("Your account request was rejected");
+        }
+
         if (user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new UnauthorizedException("Invalid email or password");
         }
@@ -99,23 +103,7 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(java.time.LocalDateTime.now());
         User updatedUser = userRepository.save(user);
 
-        String token = jwtService.generateToken(
-                updatedUser.getEmail(),
-                updatedUser.getId(),
-                updatedUser.getRole().name()
-        );
-
-        return AuthResponse.builder()
-                .token(token)
-                .userId(updatedUser.getId())
-                .name(updatedUser.getName())
-                .email(updatedUser.getEmail())
-                .role(updatedUser.getRole())
-                .userType(updatedUser.getUserType())
-                .authProvider(updatedUser.getAuthProvider())
-                .pictureUrl(updatedUser.getPictureUrl())
-                .profileCompleted(updatedUser.getUserType() != null)
-                .build();
+        return buildAuthResponse(updatedUser, true);
     }
 
     @Override
@@ -126,17 +114,43 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("User not authenticated");
         }
 
-        return AuthResponse.builder()
-                .token(null)
-                .userId(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .userType(user.getUserType())
-                .authProvider(user.getAuthProvider())
-                .pictureUrl(user.getPictureUrl())
-                .profileCompleted(user.getUserType() != null)
-                .build();
+        return buildAuthResponse(user, false);
+    }
+
+    @Override
+    public AuthResponse submitAccessRequest(SubmitAccessRequestRequest request) {
+        User user = getAuthenticatedUser();
+
+        if (user.getRole() != Role.USER || user.getUserType() != null) {
+            throw new BadRequestException("Only basic users can submit access requests");
+        }
+
+        boolean requestedRole = request.getRequestedRole() != null;
+        boolean requestedUserType = request.getRequestedUserType() != null;
+
+        if (requestedRole == requestedUserType) {
+            throw new BadRequestException("Choose either a role request or a user type request");
+        }
+
+        if (requestedRole) {
+            if (request.getRequestedRole() != Role.TECHNICIAN && request.getRequestedRole() != Role.ADMIN) {
+                throw new BadRequestException("Role request must be TECHNICIAN or ADMIN");
+            }
+
+            user.setRequestedRole(request.getRequestedRole());
+            user.setRequestedUserType(null);
+        } else {
+            if (request.getRequestedUserType() != UserType.STUDENT
+                    && request.getRequestedUserType() != UserType.LECTURER) {
+                throw new BadRequestException("User type request must be STUDENT or LECTURER");
+            }
+
+            user.setRequestedUserType(request.getRequestedUserType());
+            user.setRequestedRole(null);
+        }
+
+        User updatedUser = userRepository.save(user);
+        return buildAuthResponse(updatedUser, false);
     }
 
     @Override
@@ -145,6 +159,31 @@ public class AuthServiceImpl implements AuthService {
                 .stream()
                 .map(this::mapToUserResponse)
                 .toList();
+    }
+
+    @Override
+    public UserResponse createManagedUser(CreateManagedUserRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new BadRequestException("Email is already registered");
+        }
+
+        User user = User.builder()
+                .name(request.getName())
+                .email(email)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(request.getRole())
+                .userType(resolveManagedUserType(request.getRole(), request.getUserType()))
+                .authProvider(AuthProvider.LOCAL)
+                .phoneNumber(request.getPhoneNumber())
+                .department(request.getDepartment())
+                .isActive(true)
+                .emailVerified(true)
+                .approvalStatus(ApprovalStatus.APPROVED)
+                .build();
+
+        return mapToUserResponse(userRepository.save(user));
     }
 
     @Override
@@ -168,8 +207,28 @@ public class AuthServiceImpl implements AuthService {
             user.setUserType(request.getUserType());
         }
 
+        user.setApprovalStatus(ApprovalStatus.APPROVED);
+        user.setRequestedRole(null);
+        user.setRequestedUserType(null);
+
         User updatedUser = userRepository.save(user);
 
+        return mapToUserResponse(updatedUser);
+    }
+
+    @Override
+    public UserResponse updateApprovalStatus(String userId, UpdateApprovalStatusRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setApprovalStatus(request.getApprovalStatus());
+
+        if (request.getApprovalStatus() == ApprovalStatus.REJECTED) {
+            user.setRequestedRole(null);
+            user.setRequestedUserType(null);
+        }
+
+        User updatedUser = userRepository.save(user);
         return mapToUserResponse(updatedUser);
     }
 
@@ -197,9 +256,63 @@ public class AuthServiceImpl implements AuthService {
                 .department(user.getDepartment())
                 .isActive(user.getIsActive())
                 .emailVerified(user.getEmailVerified())
+                .approvalStatus(user.getApprovalStatus())
+                .requestedRole(user.getRequestedRole())
+                .requestedUserType(user.getRequestedUserType())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .lastLoginAt(user.getLastLoginAt())
                 .build();
+    }
+
+    private AuthResponse buildAuthResponse(User user, boolean includeToken) {
+        String token = includeToken
+                ? jwtService.generateToken(user.getEmail(), user.getId(), user.getRole().name())
+                : null;
+
+        return AuthResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .userType(user.getUserType())
+                .authProvider(user.getAuthProvider())
+                .pictureUrl(user.getPictureUrl())
+                .profileCompleted(user.getRole() != Role.USER || user.getUserType() != null)
+                .approvalStatus(user.getApprovalStatus())
+                .requestedRole(user.getRequestedRole())
+                .requestedUserType(user.getRequestedUserType())
+                .build();
+    }
+
+    private UserType mapRegistrationTypeToUserType(RegistrationType registrationType) {
+        return switch (registrationType) {
+            case NORMAL_USER -> null;
+            case STUDENT -> UserType.STUDENT;
+            case LECTURER -> UserType.LECTURER;
+        };
+    }
+
+    private UserType resolveManagedUserType(Role role, UserType userType) {
+        if (role == Role.ADMIN || role == Role.TECHNICIAN) {
+            return null;
+        }
+
+        if (userType == null) {
+            throw new BadRequestException("User type is required when creating a USER account");
+        }
+
+        return userType;
+    }
+
+    private User getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+
+        return user;
     }
 }

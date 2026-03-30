@@ -1,7 +1,10 @@
 package com.smcsystem.smart_campus_system.controller;
 
+import com.smcsystem.smart_campus_system.dto.request.CreateManagedUserRequest;
 import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
+import com.smcsystem.smart_campus_system.dto.request.SubmitAccessRequestRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateApprovalStatusRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
@@ -47,11 +50,24 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/request-access")
+    public ResponseEntity<AuthResponse> submitAccessRequest(@Valid @RequestBody SubmitAccessRequestRequest request) {
+        AuthResponse response = authService.submitAccessRequest(request);
+        return ResponseEntity.ok(response);
+    }
+
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/users")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> response = authService.getAllUsers();
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/users")
+    public ResponseEntity<UserResponse> createManagedUser(@Valid @RequestBody CreateManagedUserRequest request) {
+        UserResponse response = authService.createManagedUser(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -61,6 +77,16 @@ public class AuthController {
             @Valid @RequestBody UpdateUserRoleRequest request
     ) {
         UserResponse response = authService.updateUserRole(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PatchMapping("/users/{userId}/approval")
+    public ResponseEntity<UserResponse> updateApprovalStatus(
+            @PathVariable String userId,
+            @Valid @RequestBody UpdateApprovalStatusRequest request
+    ) {
+        UserResponse response = authService.updateApprovalStatus(userId, request);
         return ResponseEntity.ok(response);
     }
 

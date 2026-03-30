@@ -1,6 +1,7 @@
 package com.smcsystem.smart_campus_system.dto.response;
 
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
+import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
 import lombok.AllArgsConstructor;
@@ -23,4 +24,7 @@ public class AuthResponse {
     private AuthProvider authProvider;
     private String pictureUrl;
     private Boolean profileCompleted;
+    private ApprovalStatus approvalStatus;
+    private Role requestedRole;
+    private UserType requestedUserType;
 }

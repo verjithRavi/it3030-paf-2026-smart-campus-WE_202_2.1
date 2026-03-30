@@ -1,6 +1,7 @@
 package com.smcsystem.smart_campus_system.dto.response;
 
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
+import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
 import lombok.AllArgsConstructor;
@@ -27,6 +28,9 @@ public class UserResponse {
     private String department;
     private Boolean isActive;
     private Boolean emailVerified;
+    private ApprovalStatus approvalStatus;
+    private Role requestedRole;
+    private UserType requestedUserType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLoginAt;

@@ -1,6 +1,7 @@
 package com.smcsystem.smart_campus_system.security;
 
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
+import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.model.User;
 import com.smcsystem.smart_campus_system.repository.UserRepository;
@@ -59,6 +60,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     .pictureUrl(picture)
                     .isActive(true)
                     .emailVerified(true)
+                    .approvalStatus(ApprovalStatus.APPROVED)
                     .lastLoginAt(LocalDateTime.now())
                     .build();
         }
