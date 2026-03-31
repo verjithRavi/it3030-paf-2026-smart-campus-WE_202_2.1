@@ -23,6 +23,8 @@ public class AuthResponse {
     private UserType userType;
     private AuthProvider authProvider;
     private String pictureUrl;
+    private String phoneNumber;
+    private String department;
     private Boolean profileCompleted;
     private ApprovalStatus approvalStatus;
     private Role requestedRole;

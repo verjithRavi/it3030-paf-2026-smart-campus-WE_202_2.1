@@ -7,6 +7,7 @@ import {
   getCurrentUser,
   submitAccessRequest,
   updateApprovalStatus,
+  updateCurrentUserProfile,
   updateUserRole,
   updateUserStatus,
 } from '../api/authApi'
@@ -19,12 +20,15 @@ function DashboardPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [adminLoading, setAdminLoading] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
   const [error, setError] = useState('')
   const [adminError, setAdminError] = useState('')
   const [adminNotice, setAdminNotice] = useState('')
-  const [requestFeedback, setRequestFeedback] = useState({ type: '', message: '' })
-  const [requestState, setRequestState] = useState({
-    requestedRole: '',
+  const [profileMessage, setProfileMessage] = useState({ type: '', text: '' })
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    phoneNumber: '',
+    department: '',
     requestedUserType: '',
   })
   const [managedUserForm, setManagedUserForm] = useState({
@@ -44,6 +48,12 @@ function DashboardPage() {
       try {
         const currentUser = await getCurrentUser()
         setUser(currentUser)
+        setProfileForm({
+          name: currentUser.name || '',
+          phoneNumber: currentUser.phoneNumber || '',
+          department: currentUser.department || '',
+          requestedUserType: currentUser.requestedUserType || '',
+        })
 
         if (currentUser.role === 'ADMIN') {
           setAdminLoading(true)
@@ -70,8 +80,9 @@ function DashboardPage() {
     load()
   }, [navigate])
 
-  const isBasicUser = user?.role === 'USER' && !user?.userType
-  const hasPendingRequest = Boolean(user?.requestedRole || user?.requestedUserType)
+  const isCommonUser = user?.role === 'USER' && !user?.userType
+  const hasAcademicAccess = user?.role === 'USER' && Boolean(user?.userType)
+  const hasPendingAcademicRequest = Boolean(user?.requestedUserType)
 
   const summaryCards = useMemo(
     () => [
@@ -88,7 +99,7 @@ function DashboardPage() {
         value:
           user?.role !== 'USER'
             ? user?.role
-            : user?.userType || 'Normal User',
+            : user?.userType || 'Common Access',
       },
     ],
     [user]
@@ -113,49 +124,71 @@ function DashboardPage() {
     }
   }
 
-  const handleRequestChange = (field, value) => {
-    setRequestFeedback({ type: '', message: '' })
-
-    if (field === 'requestedRole') {
-      setRequestState({
-        requestedRole: value,
-        requestedUserType: value ? '' : requestState.requestedUserType,
-      })
-      return
-    }
-
-    setRequestState({
-      requestedRole: value ? '' : requestState.requestedRole,
-      requestedUserType: value,
-    })
+  const handleProfileFieldChange = (e) => {
+    const { name, value } = e.target
+    setProfileMessage({ type: '', text: '' })
+    setProfileForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
   }
 
-  const handleSubmitAccessRequest = async (e) => {
+  const handleProfileSave = async (e) => {
     e.preventDefault()
-    setRequestFeedback({ type: '', message: '' })
+    setProfileMessage({ type: '', text: '' })
 
     try {
-      const data = await submitAccessRequest({
-        requestedRole: requestState.requestedRole || null,
-        requestedUserType: requestState.requestedUserType || null,
+      const updatedUser = await updateCurrentUserProfile({
+        name: profileForm.name,
+        phoneNumber: profileForm.phoneNumber,
+        department: profileForm.department,
+        requestedUserType: profileForm.requestedUserType || null,
       })
 
-      setUser(data)
-      setRequestState({
-        requestedRole: '',
-        requestedUserType: '',
+      setUser(updatedUser)
+      setProfileForm({
+        name: updatedUser.name || '',
+        phoneNumber: updatedUser.phoneNumber || '',
+        department: updatedUser.department || '',
+        requestedUserType: updatedUser.requestedUserType || '',
       })
-      setRequestFeedback({
+      setProfileMessage({
         type: 'success',
-        message:
-          'Your request was sent to the admin. You can keep using basic access while it is under review.',
+        text:
+          updatedUser.requestedUserType
+            ? 'Profile saved. Your student or lecturer request is waiting for admin approval.'
+            : 'Profile details updated successfully.',
       })
     } catch (err) {
-      setRequestFeedback({
+      setProfileMessage({
         type: 'error',
-        message:
+        text:
           err?.response?.data?.message ||
-          'Unable to submit your access request.',
+          'Unable to update your profile right now.',
+      })
+    }
+  }
+
+  const handleQuickTypeRequest = async (requestedUserType) => {
+    setProfileMessage({ type: '', text: '' })
+
+    try {
+      const updatedUser = await submitAccessRequest({ requestedUserType })
+      setUser(updatedUser)
+      setProfileForm((prev) => ({
+        ...prev,
+        requestedUserType: updatedUser.requestedUserType || '',
+      }))
+      setProfileMessage({
+        type: 'success',
+        text: 'Your request was sent to the admin for approval.',
+      })
+    } catch (err) {
+      setProfileMessage({
+        type: 'error',
+        text:
+          err?.response?.data?.message ||
+          'Unable to submit your request right now.',
       })
     }
   }
@@ -196,27 +229,6 @@ function DashboardPage() {
     }
   }
 
-  const handleRoleUpdate = async (targetUserId, role, userType = null) => {
-    setAdminError('')
-    setAdminNotice('')
-
-    try {
-      const payload = { role }
-
-      if (role === 'USER') {
-        payload.userType = userType
-      }
-
-      await updateUserRole(targetUserId, payload)
-      await refreshUsers()
-      setAdminNotice('User access level updated successfully.')
-    } catch (err) {
-      setAdminError(
-        err?.response?.data?.message || 'Unable to update the user role.'
-      )
-    }
-  }
-
   const handleApprovalUpdate = async (targetUserId, approvalStatus) => {
     setAdminError('')
     setAdminNotice('')
@@ -229,6 +241,22 @@ function DashboardPage() {
       setAdminError(
         err?.response?.data?.message ||
           'Unable to update the approval status.'
+      )
+    }
+  }
+
+  const handleAcademicApproval = async (targetUserId, userType) => {
+    setAdminError('')
+    setAdminNotice('')
+
+    try {
+      await updateUserRole(targetUserId, { role: 'USER', userType })
+      await refreshUsers()
+      setAdminNotice(`${userType} access approved successfully.`)
+    } catch (err) {
+      setAdminError(
+        err?.response?.data?.message ||
+          'Unable to approve this academic access request.'
       )
     }
   }
@@ -265,13 +293,16 @@ function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#eceef4] px-4 py-6 text-slate-900 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-[1480px] space-y-6">
-        <Navbar user={user} onLogout={handleLogout} />
+        <Navbar
+          user={user}
+          onLogout={handleLogout}
+          onProfileClick={() => setShowProfile((prev) => !prev)}
+        />
 
         {searchParams.get('setup') === 'pending' && (
           <div className="rounded-[28px] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-800">
-            Your Google account is active as a normal user. If you need student,
-            lecturer, technician, or admin access, submit a request below for
-            admin review.
+            Your Google account is active with common access. Use the profile panel
+            to request student or lecturer access if you need academic features.
           </div>
         )}
 
@@ -290,9 +321,9 @@ function DashboardPage() {
               Welcome, {user?.name || 'Campus User'}
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-white/76">
-              Your authenticated dashboard is now running with approval-aware
-              access. Normal users can request a new path, students and lecturers
-              wait for admin approval, and admins control final identity.
+              This dashboard now separates common access from approved academic
+              access. Students and lecturers require admin approval, while admin
+              and technician accounts are created directly by an administrator.
             </p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -326,12 +357,10 @@ function DashboardPage() {
                 {user?.email}
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <span className="font-semibold text-slate-900">
-                  Identity:
-                </span>{' '}
+                <span className="font-semibold text-slate-900">Profile:</span>{' '}
                 {user?.role !== 'USER'
                   ? user?.role
-                  : user?.userType || 'Normal User'}
+                  : user?.userType || 'Common User'}
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-4">
                 <span className="font-semibold text-slate-900">Approval:</span>{' '}
@@ -339,99 +368,168 @@ function DashboardPage() {
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-4">
                 <span className="font-semibold text-slate-900">
-                  Pending Request:
+                  Pending academic request:
                 </span>{' '}
-                {user?.requestedRole || user?.requestedUserType || 'No active request'}
+                {user?.requestedUserType || 'No active request'}
               </div>
             </div>
           </section>
         </div>
 
-        {isBasicUser && (
+        {showProfile && (
           <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
             <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Identity Request
+              Profile
             </p>
             <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-              Request your campus access path
+              Edit your details
             </h3>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Common users can stay as normal users, or request exactly one
-              upgrade path. Choose either student or lecturer, or request a role
-              review for technician or admin. You cannot request both together.
+              Update your personal details here. Common users can also request
+              student or lecturer access from this panel.
             </p>
 
-            {hasPendingRequest && (
-              <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                Your current pending request is{' '}
-                <span className="font-semibold">
-                  {user?.requestedRole || user?.requestedUserType}
-                </span>
-                . Submitting a new request will replace the current one.
-              </div>
-            )}
-
             <form
-              onSubmit={handleSubmitAccessRequest}
-              className="mt-8 grid gap-6 md:grid-cols-2"
+              onSubmit={handleProfileSave}
+              className="mt-8 grid gap-4 md:grid-cols-2"
             >
-              <div className="rounded-[24px] bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  Academic Path
-                </p>
-                <select
-                  value={requestState.requestedUserType}
-                  onChange={(e) =>
-                    handleRequestChange('requestedUserType', e.target.value)
-                  }
-                  className="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-                  disabled={Boolean(requestState.requestedRole)}
-                >
-                  <option value="">Select user type</option>
-                  <option value="STUDENT">Student</option>
-                  <option value="LECTURER">Lecturer</option>
-                </select>
-              </div>
+              <input
+                type="text"
+                name="name"
+                value={profileForm.name}
+                onChange={handleProfileFieldChange}
+                placeholder="Full name"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+              />
+              <input
+                type="text"
+                name="phoneNumber"
+                value={profileForm.phoneNumber}
+                onChange={handleProfileFieldChange}
+                placeholder="Phone number"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+              />
+              <input
+                type="text"
+                name="department"
+                value={profileForm.department}
+                onChange={handleProfileFieldChange}
+                placeholder="Department"
+                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100 md:col-span-2"
+              />
 
-              <div className="rounded-[24px] bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  Role Request
-                </p>
-                <select
-                  value={requestState.requestedRole}
-                  onChange={(e) =>
-                    handleRequestChange('requestedRole', e.target.value)
-                  }
-                  className="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-                  disabled={Boolean(requestState.requestedUserType)}
+              {user?.role === 'USER' && (
+                <div className="md:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Request student or lecturer access
+                  </label>
+                  <select
+                    name="requestedUserType"
+                    value={profileForm.requestedUserType}
+                    onChange={handleProfileFieldChange}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                  >
+                    <option value="">Keep current access</option>
+                    <option value="STUDENT">Student</option>
+                    <option value="LECTURER">Lecturer</option>
+                  </select>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    Any student or lecturer request needs admin approval before
+                    the academic access becomes active.
+                  </p>
+                </div>
+              )}
+
+              {profileMessage.text && (
+                <div
+                  className={`rounded-2xl px-4 py-3 text-sm md:col-span-2 ${
+                    profileMessage.type === 'error'
+                      ? 'border border-red-200 bg-red-50 text-red-700'
+                      : 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                  }`}
                 >
-                  <option value="">Select role request</option>
-                  <option value="TECHNICIAN">Technician</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
+                  {profileMessage.text}
+                </div>
+              )}
 
               <div className="md:col-span-2">
-                {requestFeedback.message && (
-                  <div
-                    className={`mb-4 rounded-2xl px-4 py-3 text-sm ${
-                      requestFeedback.type === 'error'
-                        ? 'border border-red-200 bg-red-50 text-red-700'
-                        : 'border border-emerald-200 bg-emerald-50 text-emerald-700'
-                    }`}
-                  >
-                    {requestFeedback.message}
-                  </div>
-                )}
-
                 <button
                   type="submit"
                   className="rounded-2xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] px-6 py-3 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105"
                 >
-                  Submit Request
+                  Save Profile
                 </button>
               </div>
             </form>
+          </section>
+        )}
+
+        {isCommonUser && !showProfile && (
+          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
+              Common Access
+            </p>
+            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
+              You are using common access
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Google users start here. If you need academic access, open Profile
+              from the top-right menu and request student or lecturer approval.
+            </p>
+
+            {hasPendingAcademicRequest && (
+              <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+                Your current request is waiting for admin approval:{' '}
+                <span className="font-semibold">{user?.requestedUserType}</span>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={() => handleQuickTypeRequest('STUDENT')}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Request Student Access
+              </button>
+              <button
+                onClick={() => handleQuickTypeRequest('LECTURER')}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Request Lecturer Access
+              </button>
+            </div>
+          </section>
+        )}
+
+        {hasAcademicAccess && (
+          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
+              Academic Access
+            </p>
+            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
+              {user.userType} workspace is active
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Your academic access has been approved. You can continue using the
+              system with your {user.userType.toLowerCase()} profile and update
+              your personal details from the profile menu whenever needed.
+            </p>
+          </section>
+        )}
+
+        {(user?.role === 'ADMIN' || user?.role === 'TECHNICIAN') && (
+          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
+              Role Workspace
+            </p>
+            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
+              {user.role} access is active
+            </h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Your account was created directly by an administrator. You can edit
+              your profile details from the top-right menu and continue with your
+              assigned role-based responsibilities.
+            </p>
           </section>
         )}
 
@@ -446,9 +544,8 @@ function DashboardPage() {
                   User Management
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Approve student and lecturer registrations, review Google role
-                  requests, create technician or admin accounts directly, and
-                  control active access from one dashboard.
+                  Approve student and lecturer registrations, review common-user
+                  academic requests, and create new admin or technician accounts.
                 </p>
               </div>
               {adminLoading && (
@@ -530,12 +627,12 @@ function DashboardPage() {
 
             <div className="mt-8 overflow-x-auto rounded-[26px] border border-slate-200">
               <div className="min-w-[1180px]">
-                <div className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.5fr] gap-4 bg-slate-50 px-5 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                <div className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.4fr] gap-4 bg-slate-50 px-5 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                   <span>User</span>
                   <span>Details</span>
                   <span>Role</span>
                   <span>Approval</span>
-                  <span>Pending Request</span>
+                  <span>Request</span>
                   <span>Actions</span>
                 </div>
 
@@ -543,7 +640,7 @@ function DashboardPage() {
                   {users.map((entry) => (
                     <div
                       key={entry.id}
-                      className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.5fr] gap-4 px-5 py-5 text-sm text-slate-600"
+                      className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.4fr] gap-4 px-5 py-5 text-sm text-slate-600"
                     >
                       <div>
                         <p className="font-semibold text-slate-900">
@@ -558,8 +655,8 @@ function DashboardPage() {
                         <p>{entry.email}</p>
                         <p className="mt-1 text-xs text-slate-400">
                           {entry.role === 'USER'
-                            ? entry.userType || 'Normal User'
-                            : 'No user type'}
+                            ? entry.userType || 'Common User'
+                            : 'Managed account'}
                         </p>
                       </div>
 
@@ -584,16 +681,15 @@ function DashboardPage() {
                       </div>
 
                       <div className="flex items-center text-xs text-slate-500">
-                        {entry.requestedRole || entry.requestedUserType || 'No request'}
+                        {entry.requestedUserType || 'No request'}
                       </div>
 
                       <div className="flex flex-wrap gap-2">
                         {entry.requestedUserType && (
                           <button
                             onClick={() =>
-                              handleRoleUpdate(
+                              handleAcademicApproval(
                                 entry.id,
-                                'USER',
                                 entry.requestedUserType
                               )
                             }
@@ -603,19 +699,9 @@ function DashboardPage() {
                           </button>
                         )}
 
-                        {entry.requestedRole && (
-                          <button
-                            onClick={() =>
-                              handleRoleUpdate(entry.id, entry.requestedRole)
-                            }
-                            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                          >
-                            Approve {entry.requestedRole}
-                          </button>
-                        )}
-
                         {entry.approvalStatus === 'PENDING' &&
-                          !entry.requestedRole &&
+                          entry.role === 'USER' &&
+                          entry.userType &&
                           !entry.requestedUserType && (
                             <button
                               onClick={() =>
@@ -626,38 +712,6 @@ function DashboardPage() {
                               Approve
                             </button>
                           )}
-
-                        <button
-                          onClick={() =>
-                            handleRoleUpdate(entry.id, 'USER', 'STUDENT')
-                          }
-                          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          Student
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            handleRoleUpdate(entry.id, 'USER', 'LECTURER')
-                          }
-                          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          Lecturer
-                        </button>
-
-                        <button
-                          onClick={() => handleRoleUpdate(entry.id, 'TECHNICIAN')}
-                          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          Technician
-                        </button>
-
-                        <button
-                          onClick={() => handleRoleUpdate(entry.id, 'ADMIN')}
-                          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          Admin
-                        </button>
 
                         <button
                           onClick={() => handleApprovalUpdate(entry.id, 'REJECTED')}

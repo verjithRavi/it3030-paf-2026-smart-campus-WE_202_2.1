@@ -5,6 +5,7 @@ import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
 import com.smcsystem.smart_campus_system.dto.request.SubmitAccessRequestRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateApprovalStatusRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateProfileRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
@@ -53,6 +54,12 @@ public class AuthController {
     @PostMapping("/request-access")
     public ResponseEntity<AuthResponse> submitAccessRequest(@Valid @RequestBody SubmitAccessRequestRequest request) {
         AuthResponse response = authService.submitAccessRequest(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/profile")
+    public ResponseEntity<AuthResponse> updateCurrentUserProfile(@RequestBody UpdateProfileRequest request) {
+        AuthResponse response = authService.updateCurrentUserProfile(request);
         return ResponseEntity.ok(response);
     }
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-function Navbar({ user, onLogout }) {
+function Navbar({ user, onLogout, onProfileClick }) {
   return (
     <header className="rounded-[28px] border border-white/70 bg-white/90 px-6 py-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -25,6 +25,12 @@ function Navbar({ user, onLogout }) {
           >
             Overview
           </Link>
+          <button
+            onClick={onProfileClick}
+            className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Profile
+          </button>
           <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
             {user?.role || 'USER'}
           </div>

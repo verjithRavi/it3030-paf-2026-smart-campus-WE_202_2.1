@@ -35,6 +35,11 @@ export const submitAccessRequest = async (data) => {
   return response.data
 }
 
+export const updateCurrentUserProfile = async (data) => {
+  const response = await API.patch('/auth/profile', data)
+  return response.data
+}
+
 export const getAllUsers = async () => {
   const response = await API.get('/auth/users')
   return response.data

@@ -4,16 +4,29 @@ import AuthLayout from '../components/AuthLayout'
 import { registerUser } from '../api/authApi'
 import { setToken } from '../utils/token'
 
+function getRegisterErrorMessage(err) {
+  const validationMessages = err?.response?.data?.messages
+
+  if (validationMessages && typeof validationMessages === 'object') {
+    return Object.values(validationMessages).join(' ')
+  }
+
+  return (
+    err?.response?.data?.message ||
+    'Registration failed. Please review your details and try again.'
+  )
+}
+
 function RegisterPage() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    registrationType: 'NORMAL_USER',
-    phoneNumber: '',
-    department: '',
+    const [formData, setFormData] = useState({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      registrationType: 'STUDENT',
+      phoneNumber: '',
+      department: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -31,8 +44,28 @@ function RegisterPage() {
     setLoading(true)
     setError('')
 
+    if (formData.password !== formData.confirmPassword) {
+      setError('Password and confirm password do not match.')
+      setLoading(false)
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      setLoading(false)
+      return
+    }
+
     try {
-      const data = await registerUser(formData)
+      const payload = {
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        department: formData.department.trim(),
+      }
+
+      const data = await registerUser(payload)
 
       if (data.token) {
         setToken(data.token)
@@ -47,13 +80,10 @@ function RegisterPage() {
             data.approvalStatus === 'PENDING'
               ? 'Registration submitted. Your account is waiting for admin approval.'
               : 'Account created successfully. You can log in now.',
-        },
+          },
       })
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          'Registration failed. Please review your details and try again.'
-      )
+      setError(getRegisterErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -171,12 +201,11 @@ function RegisterPage() {
             onChange={handleChange}
             className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
           >
-            <option value="NORMAL_USER">Normal User</option>
             <option value="STUDENT">Student</option>
             <option value="LECTURER">Lecturer</option>
           </select>
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            Technician and admin accounts are created directly by an administrator.
+            Student and lecturer accounts need admin approval. Common access is available through Google sign-in, and admin or technician accounts are created directly by an administrator.
           </p>
         </div>
 

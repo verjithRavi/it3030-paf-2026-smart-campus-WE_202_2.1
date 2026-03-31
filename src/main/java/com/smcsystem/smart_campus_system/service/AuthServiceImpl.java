@@ -5,6 +5,7 @@ import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
 import com.smcsystem.smart_campus_system.dto.request.SubmitAccessRequestRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateApprovalStatusRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateProfileRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
@@ -45,15 +46,16 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Password and confirm password do not match");
         }
 
+        if (request.getRegistrationType() == RegistrationType.NORMAL_USER) {
+            throw new BadRequestException("Normal user registration is not available here. Use Google sign-in for common access");
+        }
+
         if (userRepository.existsByEmail(email)) {
             throw new BadRequestException("Email is already registered");
         }
 
         UserType userType = mapRegistrationTypeToUserType(request.getRegistrationType());
-        ApprovalStatus approvalStatus =
-                request.getRegistrationType() == RegistrationType.NORMAL_USER
-                        ? ApprovalStatus.APPROVED
-                        : ApprovalStatus.PENDING;
+        ApprovalStatus approvalStatus = ApprovalStatus.PENDING;
 
         User user = User.builder()
                 .name(request.getName())
@@ -121,28 +123,64 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse submitAccessRequest(SubmitAccessRequestRequest request) {
         User user = getAuthenticatedUser();
 
-        if (user.getRole() != Role.USER || user.getUserType() != null) {
-            throw new BadRequestException("Only basic users can submit access requests");
+        if (user.getRole() != Role.USER) {
+            throw new BadRequestException("Only user accounts can submit access requests");
         }
 
-        boolean requestedRole = request.getRequestedRole() != null;
-        boolean requestedUserType = request.getRequestedUserType() != null;
-
-        if (requestedRole == requestedUserType) {
-            throw new BadRequestException("Choose either a role request or a user type request");
+        if (request.getRequestedRole() != null) {
+            throw new BadRequestException("Role requests are not available from profile updates");
         }
 
-        if (requestedRole) {
-            if (request.getRequestedRole() != Role.TECHNICIAN && request.getRequestedRole() != Role.ADMIN) {
-                throw new BadRequestException("Role request must be TECHNICIAN or ADMIN");
+        if (request.getRequestedUserType() == null) {
+            throw new BadRequestException("Select STUDENT or LECTURER to submit a user type request");
+        }
+
+        if (request.getRequestedUserType() != UserType.STUDENT
+                && request.getRequestedUserType() != UserType.LECTURER) {
+            throw new BadRequestException("User type request must be STUDENT or LECTURER");
+        }
+
+        if (request.getRequestedUserType() == user.getUserType()
+                && user.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            throw new BadRequestException("You already have this approved user type");
+        }
+
+        user.setRequestedUserType(request.getRequestedUserType());
+        user.setRequestedRole(null);
+
+        User updatedUser = userRepository.save(user);
+        return buildAuthResponse(updatedUser, false);
+    }
+
+    @Override
+    public AuthResponse updateCurrentUserProfile(UpdateProfileRequest request) {
+        User user = getAuthenticatedUser();
+
+        if (request.getName() != null) {
+            user.setName(request.getName().trim());
+        }
+
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+
+        if (request.getDepartment() != null) {
+            user.setDepartment(request.getDepartment().trim());
+        }
+
+        if (request.getRequestedUserType() != null) {
+            if (user.getRole() != Role.USER) {
+                throw new BadRequestException("Only user accounts can request student or lecturer access");
             }
 
-            user.setRequestedRole(request.getRequestedRole());
-            user.setRequestedUserType(null);
-        } else {
             if (request.getRequestedUserType() != UserType.STUDENT
                     && request.getRequestedUserType() != UserType.LECTURER) {
-                throw new BadRequestException("User type request must be STUDENT or LECTURER");
+                throw new BadRequestException("Requested user type must be STUDENT or LECTURER");
+            }
+
+            if (request.getRequestedUserType() == user.getUserType()
+                    && user.getApprovalStatus() == ApprovalStatus.APPROVED) {
+                throw new BadRequestException("You already have this approved user type");
             }
 
             user.setRequestedUserType(request.getRequestedUserType());
@@ -169,6 +207,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Email is already registered");
         }
 
+        if (request.getRole() != Role.ADMIN && request.getRole() != Role.TECHNICIAN) {
+            throw new BadRequestException("Admins can only create ADMIN or TECHNICIAN accounts directly");
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(email)
@@ -191,21 +233,21 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (request.getRole() != Role.USER) {
+            throw new BadRequestException("Use managed account creation for ADMIN and TECHNICIAN accounts");
+        }
+
         user.setRole(request.getRole());
 
-        if (request.getRole() == Role.ADMIN || request.getRole() == Role.TECHNICIAN) {
-            user.setUserType(null);
-        } else if (request.getRole() == Role.USER) {
-            if (request.getUserType() == null) {
-                throw new BadRequestException("User type is required when role is USER");
-            }
-
-            if (request.getUserType() != UserType.STUDENT && request.getUserType() != UserType.LECTURER) {
-                throw new BadRequestException("User type must be STUDENT or LECTURER when role is USER");
-            }
-
-            user.setUserType(request.getUserType());
+        if (request.getUserType() == null) {
+            throw new BadRequestException("User type is required when approving a USER account");
         }
+
+        if (request.getUserType() != UserType.STUDENT && request.getUserType() != UserType.LECTURER) {
+            throw new BadRequestException("User type must be STUDENT or LECTURER when role is USER");
+        }
+
+        user.setUserType(request.getUserType());
 
         user.setApprovalStatus(ApprovalStatus.APPROVED);
         user.setRequestedRole(null);
@@ -279,6 +321,8 @@ public class AuthServiceImpl implements AuthService {
                 .userType(user.getUserType())
                 .authProvider(user.getAuthProvider())
                 .pictureUrl(user.getPictureUrl())
+                .phoneNumber(user.getPhoneNumber())
+                .department(user.getDepartment())
                 .profileCompleted(user.getRole() != Role.USER || user.getUserType() != null)
                 .approvalStatus(user.getApprovalStatus())
                 .requestedRole(user.getRequestedRole())
