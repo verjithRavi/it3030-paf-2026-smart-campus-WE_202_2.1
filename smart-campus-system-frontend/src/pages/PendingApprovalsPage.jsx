@@ -32,7 +32,11 @@ function PendingApprovalsPage() {
       const pendingUsers = data.filter(
         (user) =>
           user.approvalStatus === 'PENDING' &&
-          (user.requestedUserType !== null || user.role === 'TECHNICIAN')
+          (
+            user.requestedUserType !== null ||
+            user.userType !== null ||
+            user.role === 'TECHNICIAN'
+          )
       );
       setUsers(pendingUsers);
     } catch {
@@ -59,10 +63,16 @@ function PendingApprovalsPage() {
   const filteredUsers = useMemo(() => {
     if (activeTab === 'ALL') return users;
     if (activeTab === 'STUDENTS') {
-      return users.filter((user) => user.requestedUserType === 'STUDENT');
+      return users.filter(
+        (user) =>
+          user.requestedUserType === 'STUDENT' || user.userType === 'STUDENT'
+      );
     }
     if (activeTab === 'LECTURERS') {
-      return users.filter((user) => user.requestedUserType === 'LECTURER');
+      return users.filter(
+        (user) =>
+          user.requestedUserType === 'LECTURER' || user.userType === 'LECTURER'
+      );
     }
     return users.filter(
       (user) => user.role === 'TECHNICIAN' && user.approvalStatus === 'PENDING'
@@ -71,8 +81,14 @@ function PendingApprovalsPage() {
 
   const counts = {
     ALL: users.length,
-    STUDENTS: users.filter((user) => user.requestedUserType === 'STUDENT').length,
-    LECTURERS: users.filter((user) => user.requestedUserType === 'LECTURER').length,
+    STUDENTS: users.filter(
+      (user) =>
+        user.requestedUserType === 'STUDENT' || user.userType === 'STUDENT'
+    ).length,
+    LECTURERS: users.filter(
+      (user) =>
+        user.requestedUserType === 'LECTURER' || user.userType === 'LECTURER'
+    ).length,
     TECHNICIANS: users.filter(
       (user) => user.role === 'TECHNICIAN' && user.approvalStatus === 'PENDING'
     ).length,
@@ -80,10 +96,12 @@ function PendingApprovalsPage() {
 
   const handleApprove = async (user) => {
     try {
-      if (user.requestedUserType) {
+      const approvedUserType = user.requestedUserType || user.userType;
+
+      if (approvedUserType) {
         await updateUserRole(user.id, {
           role: 'USER',
-          userType: user.requestedUserType,
+          userType: approvedUserType,
           approvalStatus: 'APPROVED',
         });
       } else {
@@ -113,8 +131,8 @@ function PendingApprovalsPage() {
   };
 
   const getAvatarColor = (user) => {
-    if (user.requestedUserType === 'LECTURER') return 'purple';
-    if (user.requestedUserType === 'STUDENT') return 'blue';
+    if ((user.requestedUserType || user.userType) === 'LECTURER') return 'purple';
+    if ((user.requestedUserType || user.userType) === 'STUDENT') return 'blue';
     if (user.role === 'TECHNICIAN') return 'amber';
     return 'green';
   };
@@ -201,8 +219,8 @@ function PendingApprovalsPage() {
 
                     <div>
                       <Badge
-                        status={user.requestedUserType || user.role}
-                        label={user.requestedUserType || user.role}
+                        status={user.requestedUserType || user.userType || user.role}
+                        label={user.requestedUserType || user.userType || user.role}
                       />
                     </div>
 

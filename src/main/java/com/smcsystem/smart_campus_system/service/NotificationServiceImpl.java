@@ -26,7 +26,17 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
 
     private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+
+        if (authentication.getPrincipal() instanceof User user) {
+            return user;
+        }
+
+        String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
@@ -81,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public UnreadCountResponse getUnreadCount() {
         User user = getCurrentUser();
-        long count = notificationRepository.countByUserIdAndIsReadFalse(user.getId());
+        long count = notificationRepository.countByUserIdAndReadFalse(user.getId());
         return UnreadCountResponse.builder().count(count).build();
     }
 
@@ -98,7 +108,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead() {
         User user = getCurrentUser();
-        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(user.getId());
+        List<Notification> unread = notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(user.getId());
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }

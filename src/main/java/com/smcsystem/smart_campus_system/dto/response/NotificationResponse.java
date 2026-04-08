@@ -1,5 +1,6 @@
 package com.smcsystem.smart_campus_system.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class NotificationResponse {
     private String title;
     private String message;
     private String type;
+    @JsonProperty("isRead")
     private boolean isRead;
     private String relatedEntityId;
     private LocalDateTime createdAt;

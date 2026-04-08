@@ -1,6 +1,7 @@
 package com.smcsystem.smart_campus_system.enums;
 
 public enum NotificationType {
+    ACCESS_REQUEST_SUBMITTED,
     BOOKING_APPROVED,
     BOOKING_REJECTED,
     BOOKING_CANCELLED,

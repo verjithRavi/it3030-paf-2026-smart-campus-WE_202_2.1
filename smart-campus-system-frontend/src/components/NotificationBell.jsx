@@ -59,6 +59,37 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  const getNotificationRoute = (notification) => {
+    if (notification.type === 'ACCESS_REQUEST_SUBMITTED') {
+      return '/pending-approvals';
+    }
+
+    if (
+      [
+        'ACCESS_APPROVED',
+        'ACCESS_REJECTED',
+        'ACCOUNT_ACTIVATED',
+        'ACCOUNT_DEACTIVATED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    if (
+      [
+        'BOOKING_APPROVED',
+        'BOOKING_REJECTED',
+        'BOOKING_CANCELLED',
+        'TICKET_STATUS_CHANGED',
+        'TICKET_COMMENT_ADDED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    return '/notifications';
+  };
+
   const handleMarkAll = async () => {
     try {
       await markAllNotificationsRead();
@@ -79,11 +110,16 @@ export default function NotificationBell() {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch {
         setError('Unable to update this notification.');
+        return;
       }
     }
+
+    setOpen(false);
+    navigate(getNotificationRoute(n));
   };
 
   const typeColor = {
+    ACCESS_REQUEST_SUBMITTED: 'bg-[#FAEEDA] text-[#854F0B]',
     BOOKING_APPROVED: 'bg-[#EAF3DE] text-[#3B6D11]',
     BOOKING_REJECTED: 'bg-[#FCEBEB] text-[#A32D2D]',
     BOOKING_CANCELLED: 'bg-[#FCEBEB] text-[#A32D2D]',
@@ -97,6 +133,7 @@ export default function NotificationBell() {
   };
 
   const typeLabel = {
+    ACCESS_REQUEST_SUBMITTED: 'Approval',
     BOOKING_APPROVED: 'Booking',
     BOOKING_REJECTED: 'Booking',
     BOOKING_CANCELLED: 'Booking',
@@ -128,7 +165,9 @@ export default function NotificationBell() {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border-2 border-white" />
+          <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-red-500 px-1 py-0.5 text-[10px] font-medium leading-none text-white">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </button>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import EmptyState from '../components/ui/EmptyState';
 import PageHeader from '../components/ui/PageHeader';
@@ -6,10 +7,12 @@ import Spinner from '../components/ui/Spinner';
 import {
   getNotifications,
   markAllNotificationsRead,
+  markNotificationRead,
 } from '../api/notificationApi';
 
 const tabMap = {
   ALL: () => true,
+  APPROVALS: (n) => n.type === 'ACCESS_REQUEST_SUBMITTED',
   BOOKINGS: (n) =>
     ['BOOKING_APPROVED', 'BOOKING_REJECTED', 'BOOKING_CANCELLED'].includes(
       n.type
@@ -22,10 +25,12 @@ const tabMap = {
       'ACCESS_REJECTED',
       'ACCOUNT_ACTIVATED',
       'ACCOUNT_DEACTIVATED',
+      'ACCESS_REQUEST_SUBMITTED',
     ].includes(n.type),
 };
 
 const typeColor = {
+  ACCESS_REQUEST_SUBMITTED: 'bg-[#FAEEDA] text-[#854F0B]',
   BOOKING_APPROVED: 'bg-[#EAF3DE] text-[#3B6D11]',
   BOOKING_REJECTED: 'bg-[#FCEBEB] text-[#A32D2D]',
   BOOKING_CANCELLED: 'bg-[#FCEBEB] text-[#A32D2D]',
@@ -39,6 +44,7 @@ const typeColor = {
 };
 
 const typeLabel = {
+  ACCESS_REQUEST_SUBMITTED: 'Approval',
   BOOKING_APPROVED: 'Booking',
   BOOKING_REJECTED: 'Booking',
   BOOKING_CANCELLED: 'Booking',
@@ -52,10 +58,42 @@ const typeLabel = {
 };
 
 function NotificationsPage() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
   const [error, setError] = useState('');
+
+  const getNotificationRoute = (notification) => {
+    if (notification.type === 'ACCESS_REQUEST_SUBMITTED') {
+      return '/pending-approvals';
+    }
+
+    if (
+      [
+        'ACCESS_APPROVED',
+        'ACCESS_REJECTED',
+        'ACCOUNT_ACTIVATED',
+        'ACCOUNT_DEACTIVATED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    if (
+      [
+        'BOOKING_APPROVED',
+        'BOOKING_REJECTED',
+        'BOOKING_CANCELLED',
+        'TICKET_STATUS_CHANGED',
+        'TICKET_COMMENT_ADDED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    return '/notifications';
+  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -81,6 +119,23 @@ function NotificationsPage() {
       fetchNotifications();
     } catch {
       setError('Unable to mark all notifications as read.');
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        await markNotificationRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id ? { ...item, isRead: true } : item
+          )
+        );
+      }
+
+      navigate(getNotificationRoute(notification));
+    } catch {
+      setError('Unable to open this notification right now.');
     }
   };
 
@@ -142,7 +197,8 @@ function NotificationsPage() {
             filteredNotifications.map((n) => (
               <div
                 key={n.id}
-                className={`flex items-start gap-3 px-5 py-4 border-b border-gray-50 last:border-0 ${
+                onClick={() => handleNotificationClick(n)}
+                className={`flex cursor-pointer items-start gap-3 px-5 py-4 border-b border-gray-50 transition hover:bg-gray-50 last:border-0 ${
                   !n.isRead ? 'bg-[#F0FBF7]' : ''
                 }`}
               >

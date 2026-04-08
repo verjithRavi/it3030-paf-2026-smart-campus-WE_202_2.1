@@ -7,7 +7,7 @@ import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import PageHeader from '../components/ui/PageHeader';
 import Spinner from '../components/ui/Spinner';
-import { getAllUsers, updateUserStatus } from '../api/authApi';
+import { deleteUser, getAllUsers, updateUserStatus } from '../api/authApi';
 
 function UserDirectoryPage() {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ function UserDirectoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const categoryTitle = {
     students: 'Students',
@@ -65,10 +66,30 @@ function UserDirectoryPage() {
 
   const handleToggleStatus = async (user) => {
     try {
+      setNotice('');
       await updateUserStatus(user.id, { isActive: !user.isActive });
       fetchUsers();
     } catch {
       setError('Unable to update account status right now.');
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    const confirmed = window.confirm(
+      `Delete ${user.name}? This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError('');
+      await deleteUser(user.id);
+      setNotice(`${user.name} was deleted successfully.`);
+      fetchUsers();
+    } catch {
+      setError('Unable to delete this account right now.');
     }
   };
 
@@ -120,6 +141,11 @@ function UserDirectoryPage() {
           />
 
           <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            {notice && (
+              <div className="border-b border-gray-100 px-5 py-4 text-sm text-[#0F6E56]">
+                {notice}
+              </div>
+            )}
             {error && (
               <div className="border-b border-gray-100 px-5 py-4 text-sm text-[#A32D2D]">
                 {error}
@@ -130,7 +156,7 @@ function UserDirectoryPage() {
               <span>Provider</span>
               <span>Approval</span>
               <span>Status</span>
-              <span>Action</span>
+              <span>Actions</span>
             </div>
 
             {users.length === 0 ? (
@@ -183,16 +209,24 @@ function UserDirectoryPage() {
                   </div>
 
                   <div>
-                    <button
-                      onClick={() => handleToggleStatus(user)}
-                      className={
-                        user.isActive
-                          ? 'rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D]'
-                          : 'rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56]'
-                      }
-                    >
-                      {user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleToggleStatus(user)}
+                        className={
+                          user.isActive
+                            ? 'rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D]'
+                            : 'rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56]'
+                        }
+                      >
+                        {user.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="rounded-lg border border-[#E24B4A] bg-white px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#FCEBEB]"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

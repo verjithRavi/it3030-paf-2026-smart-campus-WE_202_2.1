@@ -77,4 +77,8 @@ export const updateUserStatus = async (userId, data) => {
   return response.data
 }
 
+export const deleteUser = async (userId) => {
+  await axiosInstance.delete(`/auth/users/${userId}`)
+}
+
 export default axiosInstance
