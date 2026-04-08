@@ -1,216 +1,260 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import AuthLayout from '../components/AuthLayout'
-import { registerUser } from '../api/authApi'
-import { setToken } from '../utils/token'
-
-function getRegisterErrorMessage(err) {
-  const validationMessages = err?.response?.data?.messages
-
-  if (validationMessages && typeof validationMessages === 'object') {
-    return Object.values(validationMessages).join(' ')
-  }
-
-  return (
-    err?.response?.data?.message ||
-    'Registration failed. Please review your details and try again.'
-  )
-}
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../api/authApi';
+import AuthLayout from '../components/AuthLayout';
+import Spinner from '../components/ui/Spinner';
+import { INPUT_CLASS, PRIMARY_BTN } from '../constants/theme';
 
 function RegisterPage() {
-  const navigate = useNavigate()
-    const [formData, setFormData] = useState({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      registrationType: 'STUDENT',
-      phoneNumber: '',
-      department: '',
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [department, setDepartment] = useState('');
+  const [userType, setUserType] = useState('STUDENT');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  const validateForm = () => {
+    const nextErrors = {};
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Password and confirm password do not match.')
-      setLoading(false)
-      return
+    if (!name.trim()) {
+      nextErrors.name = 'Name is required';
     }
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      setLoading(false)
-      return
+    if (!email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!emailPattern.test(email)) {
+      nextErrors.email = 'Enter a valid email address';
     }
+
+    if (!password) {
+      nextErrors.password = 'Password is required';
+    } else if (password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters';
+    }
+
+    if (!confirmPassword) {
+      nextErrors.confirmPassword = 'Please confirm your password';
+    } else if (password !== confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      const payload = {
-        ...formData,
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        department: formData.department.trim(),
-      }
-
-      const data = await registerUser(payload)
-
-      if (data.token) {
-        setToken(data.token)
-        navigate('/dashboard')
-        return
-      }
-
-      navigate('/', {
-        replace: true,
-        state: {
-          notice:
-            data.approvalStatus === 'PENDING'
-              ? 'Registration submitted. Your account is waiting for admin approval.'
-              : 'Account created successfully. You can log in now.',
-          },
-      })
-    } catch (err) {
-      setError(getRegisterErrorMessage(err))
+      await registerUser({
+        name,
+        email,
+        password,
+        confirmPassword,
+        phoneNumber,
+        department,
+        userType,
+        registrationType: userType,
+      });
+      navigate('/?registered=true');
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          'Registration failed. Please try again.'
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/oauth2/authorization/google'
-  }
+    window.location.href = '/oauth2/authorization/google';
+  };
+
+  const typeCardClass = (type) =>
+    userType === type
+      ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#0F6E56] font-medium'
+      : 'border-gray-200 text-gray-500 hover:border-gray-300';
 
   return (
-    <AuthLayout
-      title="Create Account"
-      subtitle="Set up your campus access profile for bookings, support, and notifications."
-      sideTitle="Create a trusted smart campus identity."
-      sideText="Register once, then move between local sign-in, Google access, protected dashboards, and role-based campus services."
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthLayout>
+      <h1 className="text-xl font-medium text-gray-900">Create account</h1>
+      <p className="mb-5 text-sm text-gray-400">Join Smart Campus</p>
+
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path
+            fill="#4285F4"
+            d="M17.64 9.2045c0-.6382-.0573-1.2518-.1636-1.8409H9v3.4818h4.8436c-.2086 1.125-.8427 2.0782-1.796 2.7164v2.2582h2.9086c1.7018-1.5668 2.6838-3.8741 2.6838-6.6155Z"
+          />
+          <path
+            fill="#34A853"
+            d="M9 18c2.43 0 4.4673-.8059 5.9564-2.1791l-2.9086-2.2582c-.8059.54-1.8368.8591-3.0478.8591-2.3441 0-4.3282-1.5832-5.0364-3.7105H.9573v2.3291C2.4382 15.9832 5.4818 18 9 18Z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M3.9636 10.7105A5.4092 5.4092 0 0 1 3.6818 9c0-.5932.1018-1.17.2818-1.7105V4.9604H.9573A8.9977 8.9977 0 0 0 0 9c0 1.4523.3477 2.8273.9573 4.0396l3.0063-2.3291Z"
+          />
+          <path
+            fill="#EA4335"
+            d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.3459l2.5813-2.5814C13.4632.8918 11.426 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9604l3.0063 2.3291C4.6718 5.1627 6.6559 3.5795 9 3.5795Z"
+          />
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <div className="relative my-4 flex items-center">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="px-3 text-xs text-gray-400">or</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Full Name
-          </label>
           <input
             type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Enter your full name"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+            placeholder="Full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={INPUT_CLASS}
             required
           />
+          {fieldErrors.name && (
+            <p className="mt-1 text-xs text-[#A32D2D]">{fieldErrors.name}</p>
+          )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email
-          </label>
           <input
             type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={INPUT_CLASS}
             required
           />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              placeholder="Optional"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Department
-            </label>
-            <input
-              type="text"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              placeholder="Optional"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Password"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              placeholder="Confirm password"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-              required
-            />
-          </div>
+          {fieldErrors.email && (
+            <p className="mt-1 text-xs text-[#A32D2D]">{fieldErrors.email}</p>
+          )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Account Option
-          </label>
-          <select
-            name="registrationType"
-            value={formData.registrationType}
-            onChange={handleChange}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-          >
-            <option value="STUDENT">Student</option>
-            <option value="LECTURER">Lecturer</option>
-          </select>
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            Student and lecturer accounts need admin approval. Common access is available through Google sign-in, and admin or technician accounts are created directly by an administrator.
-          </p>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={INPUT_CLASS}
+            required
+          />
+          <p className="mt-1 text-xs text-gray-400">Minimum 8 characters</p>
+          {fieldErrors.password && (
+            <p className="mt-1 text-xs text-[#A32D2D]">{fieldErrors.password}</p>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className={INPUT_CLASS}
+            required
+          />
+          {fieldErrors.confirmPassword && (
+            <p className="mt-1 text-xs text-[#A32D2D]">
+              {fieldErrors.confirmPassword}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Phone number (optional)"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className={INPUT_CLASS}
+          />
+          {fieldErrors.phoneNumber && (
+            <p className="mt-1 text-xs text-[#A32D2D]">
+              {fieldErrors.phoneNumber}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Department (optional)"
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className={INPUT_CLASS}
+          />
+          {fieldErrors.department && (
+            <p className="mt-1 text-xs text-[#A32D2D]">
+              {fieldErrors.department}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-1 text-xs font-medium text-gray-500">I am a</p>
+          <div className="grid grid-cols-2 gap-2">
+            <label
+              className={`cursor-pointer rounded-xl border p-3 text-center text-sm transition ${typeCardClass(
+                'STUDENT'
+              )}`}
+            >
+              <input
+                type="radio"
+                name="userType"
+                value="STUDENT"
+                checked={userType === 'STUDENT'}
+                onChange={(e) => setUserType(e.target.value)}
+                className="sr-only"
+              />
+              Student
+            </label>
+            <label
+              className={`cursor-pointer rounded-xl border p-3 text-center text-sm transition ${typeCardClass(
+                'LECTURER'
+              )}`}
+            >
+              <input
+                type="radio"
+                name="userType"
+                value="LECTURER"
+                checked={userType === 'LECTURER'}
+                onChange={(e) => setUserType(e.target.value)}
+                className="sr-only"
+              />
+              Lecturer
+            </label>
+          </div>
         </div>
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-[#E24B4A] bg-[#FCEBEB] p-3 text-sm text-[#A32D2D]">
             {error}
           </div>
         )}
@@ -218,38 +262,30 @@ function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] py-3.5 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105 disabled:opacity-60"
+          className={`${PRIMARY_BTN} flex items-center justify-center gap-2`}
         >
-          {loading ? 'Creating account...' : 'Register'}
+          {loading ? <Spinner size="sm" /> : 'Register'}
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200"></div>
-        <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Or continue
-        </span>
-        <div className="h-px flex-1 bg-slate-200"></div>
-      </div>
-
-      <button
-        onClick={handleGoogleLogin}
-        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition hover:bg-slate-50"
-      >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-sm font-bold">
-          G
-        </span>
-        Continue with Google
-      </button>
-
-      <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
+      <p className="mt-4 text-center text-xs text-gray-400">
         Already have an account?{' '}
-        <Link to="/" className="font-semibold text-slate-900">
-          Sign in here
-        </Link>
-      </div>
+        <span
+          className="cursor-pointer font-medium text-[#0F6E56]"
+          onClick={() => navigate('/')}
+          role="link"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              navigate('/');
+            }
+          }}
+        >
+          Sign in
+        </span>
+      </p>
     </AuthLayout>
-  )
+  );
 }
 
-export default RegisterPage
+export default RegisterPage;

@@ -1,284 +1,207 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import AdminSidebar from '../components/AdminSidebar'
-import Navbar from '../components/Navbar'
-import { getAllUsers, getCurrentUser, updateUserStatus } from '../api/authApi'
-import { removeToken } from '../utils/token'
-
-const directoryConfig = {
-  students: {
-    title: 'Students',
-    createLabel: 'Create Student',
-    activeKey: 'students',
-    matches: (entry) => entry.role === 'USER' && entry.userType === 'STUDENT',
-  },
-  lecturers: {
-    title: 'Lecturers',
-    createLabel: 'Create Lecturer',
-    activeKey: 'lecturers',
-    matches: (entry) => entry.role === 'USER' && entry.userType === 'LECTURER',
-  },
-  technicians: {
-    title: 'Technicians',
-    createLabel: 'Create Technician',
-    activeKey: 'technicians',
-    matches: (entry) => entry.role === 'TECHNICIAN',
-  },
-}
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import AdminSidebar from '../components/AdminSidebar';
+import Navbar from '../components/Navbar';
+import Avatar from '../components/ui/Avatar';
+import Badge from '../components/ui/Badge';
+import EmptyState from '../components/ui/EmptyState';
+import PageHeader from '../components/ui/PageHeader';
+import Spinner from '../components/ui/Spinner';
+import { getAllUsers, updateUserStatus } from '../api/authApi';
 
 function UserDirectoryPage() {
-  const navigate = useNavigate()
-  const { category } = useParams()
-  const config = directoryConfig[category]
+  const navigate = useNavigate();
+  const { category } = useParams();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
 
-  const [user, setUser] = useState(null)
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [pageError, setPageError] = useState('')
-  const [pageNotice, setPageNotice] = useState('')
-  const [pageLoading, setPageLoading] = useState(false)
+  const categoryTitle = {
+    students: 'Students',
+    lecturers: 'Lecturers',
+    technicians: 'Technicians',
+  }[category];
 
-  useEffect(() => {
-    if (!config) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [config, navigate])
+  const categoryUserType = {
+    students: 'STUDENT',
+    lecturers: 'LECTURER',
+    technicians: null,
+  }[category];
 
-  useEffect(() => {
-    if (!config) {
-      return
-    }
+  const categoryRole = category === 'technicians' ? 'TECHNICIAN' : 'USER';
 
-    const load = async () => {
-      setLoading(true)
-      setPageError('')
-
-      try {
-        const currentUser = await getCurrentUser()
-
-        if (currentUser.role !== 'ADMIN') {
-          navigate('/dashboard', { replace: true })
-          return
-        }
-
-        setUser(currentUser)
-        const allUsers = await getAllUsers()
-        setUsers(allUsers)
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          removeToken()
-          navigate('/', { replace: true })
-          return
-        }
-
-        setPageError(
-          err?.response?.data?.message ||
-            `Unable to load the ${config.title.toLowerCase()} list right now.`
-        )
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    load()
-  }, [config, navigate])
-
-  const filteredUsers = useMemo(() => {
-    if (!config) {
-      return []
-    }
-
-    return users.filter(config.matches)
-  }, [config, users])
-
-  const refreshUsers = async () => {
-    setPageLoading(true)
-
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const allUsers = await getAllUsers()
-      setUsers(allUsers)
+      const data = await getAllUsers();
+      const filtered =
+        category === 'technicians'
+          ? data.filter((user) => user.role === 'TECHNICIAN')
+          : data.filter((user) => user.userType === categoryUserType);
+      setUsers(filtered);
+    } catch {
+      setUsers([]);
+      setError('Unable to load this directory right now.');
     } finally {
-      setPageLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleStatusToggle = async (targetUserId, isActive) => {
-    setPageError('')
-    setPageNotice('')
+  useEffect(() => {
+    fetchUsers();
+  }, [category]);
 
+  const filtered = useMemo(
+    () =>
+      users.filter(
+        (u) =>
+          u.name.toLowerCase().includes(search.toLowerCase()) ||
+          u.email.toLowerCase().includes(search.toLowerCase())
+      ),
+    [search, users]
+  );
+
+  const handleToggleStatus = async (user) => {
     try {
-      await updateUserStatus(targetUserId, { isActive: !isActive })
-      await refreshUsers()
-      setPageNotice(
-        isActive ? 'User account deactivated.' : 'User account activated.'
-      )
-    } catch (err) {
-      setPageError(
-        err?.response?.data?.message || 'Unable to update the user status.'
-      )
+      await updateUserStatus(user.id, { isActive: !user.isActive });
+      fetchUsers();
+    } catch {
+      setError('Unable to update account status right now.');
     }
-  }
+  };
 
-  if (!config) {
-    return null
+  if (!categoryTitle) {
+    return null;
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#eceef4] p-4 sm:p-6">
-        <div className="min-h-[calc(100vh-2rem)] border border-slate-200/80 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:min-h-[calc(100vh-3rem)]">
-          <div className="border-b border-slate-200/80 px-6 py-4">
-            <p className="text-2xl font-semibold text-slate-900">
-              Loading {config.title.toLowerCase()}...
-            </p>
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex flex-1 flex-col">
+          <Navbar />
+          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
+            <Spinner size="lg" />
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#eceef4] text-slate-900">
-      <div className="relative min-h-screen overflow-hidden bg-[#eceef4]">
-        <Navbar
-          user={user}
-          onMenuToggle={() => setSidebarOpen(true)}
-          onUserUpdate={setUser}
-        />
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex flex-1 flex-col">
+        <Navbar />
+        <main className="flex-1 px-6 py-6">
+          <PageHeader
+            title={categoryTitle + ' directory'}
+            subtitle={'Manage and monitor ' + categoryTitle.toLowerCase() + ' accounts.'}
+            action={
+              <button
+                onClick={() => navigate('/users/' + category + '/create')}
+                className="rounded-xl bg-[#0F6E56] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#085041]"
+              >
+                + Add {categoryTitle.slice(0, -1)}
+              </button>
+            }
+          />
 
-        <AdminSidebar
-          user={user}
-          sidebarOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          activeItem={config.activeKey}
-        />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              'Search ' + categoryTitle.toLowerCase() + ' by name or email...'
+            }
+            className="mb-4 w-72 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]"
+          />
 
-        <div className="min-h-[calc(100vh-72px)] px-6 py-5">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-                  User Directory
-                </p>
-                <h2 className="mt-3 text-4xl font-semibold leading-none text-slate-900">
-                  {config.title} List
-                </h2>
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            {error && (
+              <div className="border-b border-gray-100 px-5 py-4 text-sm text-[#A32D2D]">
+                {error}
               </div>
+            )}
+            <div className="grid grid-cols-5 border-b border-gray-100 bg-gray-50 px-5 py-3 text-xs font-medium uppercase tracking-wide text-gray-400">
+              <span>Name</span>
+              <span>Provider</span>
+              <span>Approval</span>
+              <span>Status</span>
+              <span>Action</span>
+            </div>
 
-              <div className="flex flex-wrap gap-3">
-                {pageLoading && (
-                  <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-                    Refreshing list...
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => navigate(`/users/${category}/create`)}
-                  className="rounded-xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.22)] transition hover:brightness-105"
+            {users.length === 0 ? (
+              <EmptyState
+                title={'No ' + categoryTitle.toLowerCase() + ' found'}
+                subtitle="Create one using the button above."
+              />
+            ) : filtered.length === 0 ? (
+              <EmptyState title="No results found" />
+            ) : (
+              filtered.map((user) => (
+                <div
+                  key={user.id}
+                  className="grid grid-cols-5 items-center border-b border-gray-50 px-5 py-3.5 transition last:border-0 hover:bg-gray-50"
                 >
-                  {config.createLabel}
-                </button>
-              </div>
-            </div>
-
-            {pageError && (
-              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {pageError}
-              </div>
-            )}
-
-            {pageNotice && (
-              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {pageNotice}
-              </div>
-            )}
-
-            <div className="mt-6 overflow-x-auto rounded-[26px] border border-slate-200">
-              <div className="min-w-[1080px]">
-                <div className="grid grid-cols-[1.1fr_1fr_0.8fr_0.8fr_1fr_1fr] gap-4 bg-slate-50 px-5 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  <span>User</span>
-                  <span>Email</span>
-                  <span>Role</span>
-                  <span>Status</span>
-                  <span>Approval</span>
-                  <span>Actions</span>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="grid grid-cols-[1.1fr_1fr_0.8fr_0.8fr_1fr_1fr] gap-4 px-5 py-5 text-sm text-slate-600"
-                      >
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {entry.name}
-                          </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
-                            {entry.authProvider}
-                          </p>
-                        </div>
-
-                        <div>{entry.email}</div>
-
-                        <div className="flex items-center">
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
-                            {entry.role === 'USER' ? entry.userType : entry.role}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                              entry.isActive
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-200 text-slate-700'
-                            }`}
-                          >
-                            {entry.isActive ? 'ACTIVE' : 'INACTIVE'}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                              entry.approvalStatus === 'APPROVED'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : entry.approvalStatus === 'PENDING'
-                                  ? 'bg-amber-100 text-amber-700'
-                                  : 'bg-red-100 text-red-700'
-                            }`}
-                          >
-                            {entry.approvalStatus}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleStatusToggle(entry.id, entry.isActive)}
-                            className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                          >
-                            {entry.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-5 py-8 text-sm text-slate-500">
-                      No {config.title.toLowerCase()} found yet.
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={user.name}
+                      color={categoryRole === 'TECHNICIAN' ? 'amber' : 'blue'}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
                     </div>
-                  )}
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    <span
+                      className={`mr-2 inline-block h-2 w-2 rounded-full ${
+                        user.authProvider === 'GOOGLE'
+                          ? 'bg-[#1D9E75]'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                    {user.authProvider === 'GOOGLE' ? 'Google' : 'Local'}
+                  </div>
+
+                  <div>
+                    <Badge
+                      status={user.approvalStatus}
+                      label={user.approvalStatus}
+                    />
+                  </div>
+
+                  <div>
+                    <Badge
+                      status={user.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      label={user.isActive ? 'Active' : 'Inactive'}
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={() => handleToggleStatus(user)}
+                      className={
+                        user.isActive
+                          ? 'rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D]'
+                          : 'rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56]'
+                      }
+                    >
+                      {user.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </section>
-        </div>
+              ))
+            )}
+          </div>
+        </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default UserDirectoryPage
+export default UserDirectoryPage;

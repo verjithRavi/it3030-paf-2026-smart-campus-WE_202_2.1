@@ -12,6 +12,7 @@ import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
 import com.smcsystem.smart_campus_system.dto.response.UserResponse;
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
 import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
+import com.smcsystem.smart_campus_system.enums.NotificationType;
 import com.smcsystem.smart_campus_system.enums.RegistrationType;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final NotificationService notificationService;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -270,7 +272,24 @@ public class AuthServiceImpl implements AuthService {
 
         user.setApprovalStatus(request.getApprovalStatus());
 
+        if (request.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Access Approved",
+                    "Your " + user.getRequestedUserType() + " access request has been approved by admin.",
+                    NotificationType.ACCESS_APPROVED,
+                    user.getId()
+            );
+        }
+
         if (request.getApprovalStatus() == ApprovalStatus.REJECTED) {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Access Rejected",
+                    "Your access request was reviewed and rejected by admin.",
+                    NotificationType.ACCESS_REJECTED,
+                    user.getId()
+            );
             user.setRequestedRole(null);
             user.setRequestedUserType(null);
         }
@@ -285,6 +304,25 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         user.setIsActive(request.getIsActive());
+
+        if (Boolean.TRUE.equals(request.getIsActive())) {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Account Activated",
+                    "Your campus account has been activated.",
+                    NotificationType.ACCOUNT_ACTIVATED,
+                    user.getId()
+            );
+        } else {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Account Deactivated",
+                    "Your campus account has been deactivated by admin.",
+                    NotificationType.ACCOUNT_DEACTIVATED,
+                    user.getId()
+            );
+        }
+
         User updatedUser = userRepository.save(user);
 
         return mapToUserResponse(updatedUser);

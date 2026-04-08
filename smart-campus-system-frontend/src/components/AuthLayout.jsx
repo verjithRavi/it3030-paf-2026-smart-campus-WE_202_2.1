@@ -1,88 +1,55 @@
-function AuthLayout({ title, subtitle, children, sideTitle, sideText }) {
+export default function AuthLayout({ children, title, subtitle }) {
   return (
-    <div className="min-h-screen overflow-hidden bg-[#e9edf3] px-4 py-6 sm:px-6 lg:px-10">
-      <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] max-w-[1400px] items-center justify-center overflow-hidden rounded-[36px] bg-[linear-gradient(135deg,#0c666b,#0a5158)] shadow-[0_35px_90px_rgba(15,23,42,0.14)]">
-        <div className="absolute -left-20 top-[-100px] h-[280px] w-[280px] rounded-full bg-white/12 blur-3xl" />
-        <div className="absolute bottom-[-90px] right-[-80px] h-[320px] w-[320px] rounded-full bg-emerald-300/15 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(5,74,79,0.18),rgba(5,74,79,0.48))]" />
-
-        <div className="relative z-10 grid w-full max-w-[1180px] gap-10 px-6 py-10 md:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:px-14 xl:px-18">
-          <section className="hidden self-stretch rounded-[30px] border border-white/10 bg-white/8 p-8 text-white backdrop-blur lg:flex lg:flex-col lg:justify-between">
-            <div>
-              <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75">
-                Smart Campus Auth
-              </div>
-
-              <h1 className="mt-10 max-w-lg font-serif text-6xl leading-[0.96] tracking-[-0.05em]">
-                {sideTitle}
-              </h1>
-
-              <p className="mt-6 max-w-xl text-base leading-7 text-white/76">
-                {sideText}
-              </p>
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      <aside className="hidden md:flex flex-col justify-between bg-[#0F6E56] p-10">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/12 ring-1 ring-white/20">
+              <div className="h-4 w-4 rounded-md bg-white" />
             </div>
+            <span className="text-sm font-medium text-white">Smart Campus</span>
+          </div>
 
-            <div className="space-y-5">
-              <div className="rounded-[28px] bg-white/95 p-6 text-slate-900 shadow-[0_22px_45px_rgba(15,23,42,0.12)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Access Stack
-                </p>
-                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
-                      Auth
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-700">JWT</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
-                      Social
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-700">
-                      Google
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 px-3 py-4">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
-                      Roles
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-700">RBAC</p>
-                  </div>
-                </div>
+          <div className="mt-16 max-w-md">
+            <h1 className="text-2xl font-medium leading-snug text-white">
+              Your campus, all in one place.
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-white/70">
+              Bookings, incidents, approvals — managed securely with role-based
+              access and Google OAuth.
+            </p>
+
+            <div className="mt-10 space-y-4">
+              <div className="flex items-center gap-3 text-sm text-white/85">
+                <span className="h-2 w-2 rounded-full bg-white/60" />
+                <span>Secure JWT + Google OAuth2 authentication</span>
               </div>
-
-              <div className="rounded-[28px] border border-white/12 bg-white/10 px-6 py-5 text-sm leading-6 text-white/75">
-                Securely sign in to manage campus services, protected dashboards,
-                admin controls, and Google-based access in one place.
+              <div className="flex items-center gap-3 text-sm text-white/85">
+                <span className="h-2 w-2 rounded-full bg-white/60" />
+                <span>Role-based access control and approval workflow</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-white/85">
+                <span className="h-2 w-2 rounded-full bg-white/60" />
+                <span>Real-time notifications and admin management</span>
               </div>
             </div>
-          </section>
-
-          <section className="flex items-center justify-center">
-            <div className="w-full max-w-[470px] rounded-[30px] bg-white/96 p-7 shadow-[0_30px_70px_rgba(15,23,42,0.15)] backdrop-blur sm:p-8">
-              <div className="mb-7 flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-400">
-                    Access Hub
-                  </p>
-                  <h2 className="mt-4 font-serif text-[2.35rem] leading-none text-slate-900">
-                    {title}
-                  </h2>
-                  <p className="mt-3 max-w-sm text-sm leading-6 text-slate-500">
-                    {subtitle}
-                  </p>
-                </div>
-
-                <div className="h-14 w-14 rounded-full bg-[linear-gradient(135deg,#0f6e73,#89f6bf)] shadow-[0_14px_26px_rgba(15,94,99,0.2)]" />
-              </div>
-
-              {children}
-            </div>
-          </section>
+          </div>
         </div>
-      </div>
-    </div>
-  )
-}
 
-export default AuthLayout
+        <p className="text-xs text-white/40">Smart Campus System — SLIIT IT3030</p>
+      </aside>
+
+      <main className="flex flex-col justify-center bg-white p-8 md:p-12">
+        <div className="mx-auto w-full max-w-sm px-6">
+          {(title || subtitle) && (
+            <div className="mb-8">
+              {title && <h2 className="text-2xl font-medium text-gray-900">{title}</h2>}
+              {subtitle && <p className="mt-2 text-sm leading-relaxed text-gray-500">{subtitle}</p>}
+            </div>
+          )}
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}

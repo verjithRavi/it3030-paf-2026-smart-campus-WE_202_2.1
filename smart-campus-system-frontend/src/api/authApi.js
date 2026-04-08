@@ -1,11 +1,11 @@
 import axios from 'axios'
-import { getToken } from '../utils/token'
+import { getToken, removeToken } from '../utils/token'
 
-const API = axios.create({
+const axiosInstance = axios.create({
   baseURL: '/api/v1',
 })
 
-API.interceptors.request.use((config) => {
+axiosInstance.interceptors.request.use((config) => {
   const token = getToken()
 
   if (token) {
@@ -15,54 +15,66 @@ API.interceptors.request.use((config) => {
   return config
 })
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      removeToken()
+      window.location.href = '/'
+    }
+
+    return Promise.reject(error)
+  }
+)
+
 export const registerUser = async (data) => {
-  const response = await API.post('/auth/register', data)
+  const response = await axiosInstance.post('/auth/register', data)
   return response.data
 }
 
 export const loginUser = async (data) => {
-  const response = await API.post('/auth/login', data)
+  const response = await axiosInstance.post('/auth/login', data)
   return response.data
 }
 
 export const getCurrentUser = async () => {
-  const response = await API.get('/auth/me')
+  const response = await axiosInstance.get('/auth/me')
   return response.data
 }
 
 export const submitAccessRequest = async (data) => {
-  const response = await API.post('/auth/request-access', data)
+  const response = await axiosInstance.post('/auth/request-access', data)
   return response.data
 }
 
 export const updateCurrentUserProfile = async (data) => {
-  const response = await API.patch('/auth/profile', data)
+  const response = await axiosInstance.patch('/auth/profile', data)
   return response.data
 }
 
 export const getAllUsers = async () => {
-  const response = await API.get('/auth/users')
+  const response = await axiosInstance.get('/auth/users')
   return response.data
 }
 
 export const createManagedUser = async (data) => {
-  const response = await API.post('/auth/users', data)
+  const response = await axiosInstance.post('/auth/users', data)
   return response.data
 }
 
 export const updateUserRole = async (userId, data) => {
-  const response = await API.patch(`/auth/users/${userId}/role`, data)
+  const response = await axiosInstance.patch(`/auth/users/${userId}/role`, data)
   return response.data
 }
 
 export const updateApprovalStatus = async (userId, data) => {
-  const response = await API.patch(`/auth/users/${userId}/approval`, data)
+  const response = await axiosInstance.patch(`/auth/users/${userId}/approval`, data)
   return response.data
 }
 
 export const updateUserStatus = async (userId, data) => {
-  const response = await API.patch(`/auth/users/${userId}/status`, data)
+  const response = await axiosInstance.patch(`/auth/users/${userId}/status`, data)
   return response.data
 }
 
-export default API
+export default axiosInstance
