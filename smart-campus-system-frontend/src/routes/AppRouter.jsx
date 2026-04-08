@@ -3,6 +3,9 @@ import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
 import OAuthSuccessPage from '../pages/OAuthSuccessPage'
 import DashboardPage from '../pages/DashboardPage'
+import PendingApprovalsPage from '../pages/PendingApprovalsPage'
+import UserDirectoryPage from '../pages/UserDirectoryPage'
+import CreateDirectoryUserPage from '../pages/CreateDirectoryUserPage'
 import { getToken, hasToken } from '../utils/token'
 
 function ProtectedRoute({ children }) {
@@ -48,6 +51,30 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pending-approvals"
+        element={
+          <ProtectedRoute>
+            <PendingApprovalsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/:category"
+        element={
+          <ProtectedRoute>
+            <UserDirectoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/:category/create"
+        element={
+          <ProtectedRoute>
+            <CreateDirectoryUserPage />
           </ProtectedRoute>
         }
       />

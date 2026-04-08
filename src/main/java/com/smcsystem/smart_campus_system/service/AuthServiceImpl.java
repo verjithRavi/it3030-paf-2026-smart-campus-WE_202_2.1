@@ -168,6 +168,11 @@ public class AuthServiceImpl implements AuthService {
             user.setDepartment(request.getDepartment().trim());
         }
 
+        if (request.getPictureUrl() != null) {
+            String pictureUrl = request.getPictureUrl().trim();
+            user.setPictureUrl(pictureUrl.isEmpty() ? null : pictureUrl);
+        }
+
         if (request.getRequestedUserType() != null) {
             if (user.getRole() != Role.USER) {
                 throw new BadRequestException("Only user accounts can request student or lecturer access");
