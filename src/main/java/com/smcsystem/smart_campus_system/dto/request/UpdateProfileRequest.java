@@ -12,5 +12,7 @@ public class UpdateProfileRequest {
 
     private String department;
 
+    private String pictureUrl;
+
     private UserType requestedUserType;
 }
