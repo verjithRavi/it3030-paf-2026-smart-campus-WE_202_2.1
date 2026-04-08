@@ -34,4 +34,6 @@ public interface AuthService {
     UserResponse updateApprovalStatus(String userId, UpdateApprovalStatusRequest request);
 
     UserResponse updateUserStatus(String userId, UpdateUserStatusRequest request);
+
+    void deleteUser(String userId);
 }

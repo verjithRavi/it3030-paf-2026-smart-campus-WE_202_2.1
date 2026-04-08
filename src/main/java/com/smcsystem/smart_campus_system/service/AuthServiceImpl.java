@@ -12,6 +12,7 @@ import com.smcsystem.smart_campus_system.dto.response.AuthResponse;
 import com.smcsystem.smart_campus_system.dto.response.UserResponse;
 import com.smcsystem.smart_campus_system.enums.AuthProvider;
 import com.smcsystem.smart_campus_system.enums.ApprovalStatus;
+import com.smcsystem.smart_campus_system.enums.NotificationType;
 import com.smcsystem.smart_campus_system.enums.RegistrationType;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
@@ -19,6 +20,7 @@ import com.smcsystem.smart_campus_system.exception.BadRequestException;
 import com.smcsystem.smart_campus_system.exception.ResourceNotFoundException;
 import com.smcsystem.smart_campus_system.exception.UnauthorizedException;
 import com.smcsystem.smart_campus_system.model.User;
+import com.smcsystem.smart_campus_system.repository.NotificationRepository;
 import com.smcsystem.smart_campus_system.repository.UserRepository;
 import com.smcsystem.smart_campus_system.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +37,24 @@ import java.util.List;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final NotificationService notificationService;
+
+    private void notifyAdmins(String title, String message, NotificationType type, String relatedEntityId) {
+        userRepository.findAll().stream()
+                .filter(existingUser -> existingUser.getRole() == Role.ADMIN)
+                .forEach(admin ->
+                        notificationService.createNotification(
+                                admin.getId(),
+                                title,
+                                message,
+                                type,
+                                relatedEntityId
+                        )
+                );
+    }
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -77,6 +95,13 @@ public class AuthServiceImpl implements AuthService {
         } catch (DuplicateKeyException ex) {
             throw new BadRequestException("Email is already registered");
         }
+
+        notifyAdmins(
+                "New Approval Request",
+                savedUser.getName() + " registered as " + savedUser.getUserType() + " and is waiting for approval.",
+                NotificationType.ACCESS_REQUEST_SUBMITTED,
+                savedUser.getId()
+        );
 
         return buildAuthResponse(savedUser, approvalStatus == ApprovalStatus.APPROVED);
     }
@@ -149,6 +174,14 @@ public class AuthServiceImpl implements AuthService {
         user.setRequestedRole(null);
 
         User updatedUser = userRepository.save(user);
+
+        notifyAdmins(
+                "Access Request Submitted",
+                updatedUser.getName() + " requested " + updatedUser.getRequestedUserType() + " access.",
+                NotificationType.ACCESS_REQUEST_SUBMITTED,
+                updatedUser.getId()
+        );
+
         return buildAuthResponse(updatedUser, false);
     }
 
@@ -270,7 +303,25 @@ public class AuthServiceImpl implements AuthService {
 
         user.setApprovalStatus(request.getApprovalStatus());
 
+        if (request.getApprovalStatus() == ApprovalStatus.APPROVED) {
+            UserType approvedUserType = user.getRequestedUserType() != null ? user.getRequestedUserType() : user.getUserType();
+            notificationService.createNotification(
+                    user.getId(),
+                    "Access Approved",
+                    "Your " + approvedUserType + " access request has been approved by admin.",
+                    NotificationType.ACCESS_APPROVED,
+                    user.getId()
+            );
+        }
+
         if (request.getApprovalStatus() == ApprovalStatus.REJECTED) {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Access Rejected",
+                    "Your access request was reviewed and rejected by admin.",
+                    NotificationType.ACCESS_REJECTED,
+                    user.getId()
+            );
             user.setRequestedRole(null);
             user.setRequestedUserType(null);
         }
@@ -285,9 +336,41 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         user.setIsActive(request.getIsActive());
+
+        if (Boolean.TRUE.equals(request.getIsActive())) {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Account Activated",
+                    "Your campus account has been activated.",
+                    NotificationType.ACCOUNT_ACTIVATED,
+                    user.getId()
+            );
+        } else {
+            notificationService.createNotification(
+                    user.getId(),
+                    "Account Deactivated",
+                    "Your campus account has been deactivated by admin.",
+                    NotificationType.ACCOUNT_DEACTIVATED,
+                    user.getId()
+            );
+        }
+
         User updatedUser = userRepository.save(user);
 
         return mapToUserResponse(updatedUser);
+    }
+
+    @Override
+    public void deleteUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (user.getRole() == Role.ADMIN) {
+            throw new BadRequestException("Admin accounts cannot be deleted here");
+        }
+
+        notificationRepository.deleteAllByUserId(user.getId());
+        userRepository.delete(user);
     }
 
     private UserResponse mapToUserResponse(User user) {

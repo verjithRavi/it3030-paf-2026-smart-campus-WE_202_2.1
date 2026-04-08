@@ -1,337 +1,285 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import AdminSidebar from '../components/AdminSidebar'
-import Navbar from '../components/Navbar'
+import { useEffect, useMemo, useState } from 'react';
+import AdminSidebar from '../components/AdminSidebar';
+import Navbar from '../components/Navbar';
+import Avatar from '../components/ui/Avatar';
+import Badge from '../components/ui/Badge';
+import EmptyState from '../components/ui/EmptyState';
+import PageHeader from '../components/ui/PageHeader';
+import Spinner from '../components/ui/Spinner';
 import {
   getAllUsers,
-  getCurrentUser,
   updateApprovalStatus,
   updateUserRole,
-} from '../api/authApi'
-import { removeToken } from '../utils/token'
+} from '../api/authApi';
+import { timeAgo } from '../utils/time';
+
+const TABS = ['ALL', 'STUDENTS', 'LECTURERS', 'TECHNICIANS'];
 
 function PendingApprovalsPage() {
-  const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [approvalFilter, setApprovalFilter] = useState('ALL')
-  const [adminLoading, setAdminLoading] = useState(false)
-  const [adminError, setAdminError] = useState('')
-  const [adminNotice, setAdminNotice] = useState('')
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [toast, setToast] = useState('');
+  const [error, setError] = useState('');
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getAllUsers();
+      const pendingUsers = data.filter(
+        (user) =>
+          user.approvalStatus === 'PENDING' &&
+          (
+            user.requestedUserType !== null ||
+            user.userType !== null ||
+            user.role === 'TECHNICIAN'
+          )
+      );
+      setUsers(pendingUsers);
+    } catch {
+      setUsers([]);
+      setError('Unable to load pending approvals right now.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      setAdminError('')
+    fetchUsers();
+  }, []);
 
-      try {
-        const currentUser = await getCurrentUser()
-
-        if (currentUser.role !== 'ADMIN') {
-          navigate('/dashboard', { replace: true })
-          return
-        }
-
-        setUser(currentUser)
-        setAdminLoading(true)
-        const allUsers = await getAllUsers()
-        setUsers(allUsers)
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          removeToken()
-          navigate('/', { replace: true })
-          return
-        }
-
-        setAdminError(
-          err?.response?.data?.message ||
-            'Unable to load the pending approvals page right now.'
-        )
-      } finally {
-        setLoading(false)
-        setAdminLoading(false)
-      }
+  useEffect(() => {
+    if (!toast) {
+      return;
     }
 
-    load()
-  }, [navigate])
+    const timeout = setTimeout(() => setToast(''), 2500);
+    return () => clearTimeout(timeout);
+  }, [toast]);
 
-  const refreshUsers = async () => {
-    setAdminLoading(true)
+  const filteredUsers = useMemo(() => {
+    if (activeTab === 'ALL') return users;
+    if (activeTab === 'STUDENTS') {
+      return users.filter(
+        (user) =>
+          user.requestedUserType === 'STUDENT' || user.userType === 'STUDENT'
+      );
+    }
+    if (activeTab === 'LECTURERS') {
+      return users.filter(
+        (user) =>
+          user.requestedUserType === 'LECTURER' || user.userType === 'LECTURER'
+      );
+    }
+    return users.filter(
+      (user) => user.role === 'TECHNICIAN' && user.approvalStatus === 'PENDING'
+    );
+  }, [activeTab, users]);
 
+  const counts = {
+    ALL: users.length,
+    STUDENTS: users.filter(
+      (user) =>
+        user.requestedUserType === 'STUDENT' || user.userType === 'STUDENT'
+    ).length,
+    LECTURERS: users.filter(
+      (user) =>
+        user.requestedUserType === 'LECTURER' || user.userType === 'LECTURER'
+    ).length,
+    TECHNICIANS: users.filter(
+      (user) => user.role === 'TECHNICIAN' && user.approvalStatus === 'PENDING'
+    ).length,
+  };
+
+  const handleApprove = async (user) => {
     try {
-      const allUsers = await getAllUsers()
-      setUsers(allUsers)
-    } finally {
-      setAdminLoading(false)
+      const approvedUserType = user.requestedUserType || user.userType;
+
+      if (approvedUserType) {
+        await updateUserRole(user.id, {
+          role: 'USER',
+          userType: approvedUserType,
+          approvalStatus: 'APPROVED',
+        });
+      } else {
+        await updateApprovalStatus(user.id, { approvalStatus: 'APPROVED' });
+      }
+
+      await fetchUsers();
+      setToast('Approval updated successfully.');
+    } catch {
+      setError('Unable to approve this request right now.');
     }
-  }
+  };
 
-  const pendingApprovalUsers = useMemo(() => {
-    return users.filter((entry) => {
-      const isPending =
-        entry.approvalStatus === 'PENDING' || Boolean(entry.requestedUserType)
-
-      if (!isPending) {
-        return false
-      }
-
-      if (approvalFilter === 'ALL') {
-        return true
-      }
-
-      if (approvalFilter === 'STUDENT') {
-        return (
-          entry.requestedUserType === 'STUDENT' ||
-          (entry.userType === 'STUDENT' && entry.approvalStatus === 'PENDING')
-        )
-      }
-
-      if (approvalFilter === 'LECTURER') {
-        return (
-          entry.requestedUserType === 'LECTURER' ||
-          (entry.userType === 'LECTURER' && entry.approvalStatus === 'PENDING')
-        )
-      }
-
-      if (approvalFilter === 'TECHNICIAN') {
-        return entry.role === 'TECHNICIAN'
-      }
-
-      return true
-    })
-  }, [approvalFilter, users])
-
-  const handleAcademicApproval = async (targetUserId, userType) => {
-    setAdminError('')
-    setAdminNotice('')
-
+  const handleReject = async (user) => {
     try {
-      await updateUserRole(targetUserId, { role: 'USER', userType })
-      await refreshUsers()
-      setAdminNotice(`${userType} access approved successfully.`)
-    } catch (err) {
-      setAdminError(
-        err?.response?.data?.message ||
-          'Unable to approve this academic access request.'
-      )
+      await updateApprovalStatus(user.id, {
+        approvalStatus: 'REJECTED',
+        reason: rejectReason,
+      });
+      await fetchUsers();
+      setRejectingId(null);
+      setRejectReason('');
+      setToast('Request rejected successfully.');
+    } catch {
+      setError('Unable to reject this request right now.');
     }
-  }
+  };
 
-  const handleApprovalUpdate = async (targetUserId, approvalStatus) => {
-    setAdminError('')
-    setAdminNotice('')
-
-    try {
-      await updateApprovalStatus(targetUserId, { approvalStatus })
-      await refreshUsers()
-      setAdminNotice(`User marked as ${approvalStatus.toLowerCase()}.`)
-    } catch (err) {
-      setAdminError(
-        err?.response?.data?.message ||
-          'Unable to update the approval status.'
-      )
-    }
-  }
+  const getAvatarColor = (user) => {
+    if ((user.requestedUserType || user.userType) === 'LECTURER') return 'purple';
+    if ((user.requestedUserType || user.userType) === 'STUDENT') return 'blue';
+    if (user.role === 'TECHNICIAN') return 'amber';
+    return 'green';
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#eceef4] p-4 sm:p-6">
-        <div className="min-h-[calc(100vh-2rem)] border border-slate-200/80 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:min-h-[calc(100vh-3rem)]">
-          <div className="border-b border-slate-200/80 px-6 py-4">
-            <p className="text-2xl font-semibold text-slate-900">
-              Loading pending approvals...
-            </p>
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex flex-1 flex-col">
+          <Navbar />
+          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
+            <Spinner size="lg" />
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#eceef4] text-slate-900">
-      <div className="relative min-h-screen overflow-hidden bg-[#eceef4]">
-        <Navbar
-          user={user}
-          onMenuToggle={() => setSidebarOpen(true)}
-          onUserUpdate={setUser}
-        />
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex flex-1 flex-col">
+        <Navbar />
+        <main className="max-w-5xl flex-1 px-6 py-6">
+          <PageHeader
+            title="Pending approvals"
+            subtitle="Review and manage user access requests."
+          />
 
-        <AdminSidebar
-          user={user}
-          sidebarOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          activeItem="pending"
-        />
+          {toast && (
+            <div className="mb-4 rounded-xl border border-[#1D9E75] bg-[#E1F5EE] px-4 py-3 text-sm text-[#0F6E56]">
+              {toast}
+            </div>
+          )}
 
-        <div className="min-h-[calc(100vh-72px)] px-6 py-5">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-                  Approval Workspace
-                </p>
-                <h2 className="mt-3 text-4xl font-semibold leading-none text-slate-900">
-                  Pending Approvals
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Review all users waiting for approval and filter by students,
-                  lecturers, or technicians.
-                </p>
-              </div>
+          {error && (
+            <div className="mb-4 rounded-xl border border-[#E24B4A] bg-[#FCEBEB] px-4 py-3 text-sm text-[#A32D2D]">
+              {error}
+            </div>
+          )}
 
-              {adminLoading && (
-                <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-                  Refreshing approvals...
-                </div>
-              )}
+          <div className="mb-5 flex gap-2">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={
+                  activeTab === tab
+                    ? 'rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900'
+                    : 'rounded-xl px-4 py-2 text-sm text-gray-400 transition hover:text-gray-600'
+                }
+              >
+                {tab} ({counts[tab]})
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+            <div className="grid grid-cols-4 border-b border-gray-100 bg-gray-50 px-5 py-3 text-xs font-medium uppercase tracking-wide text-gray-400">
+              <span>User</span>
+              <span>Requested role</span>
+              <span>Registered</span>
+              <span>Actions</span>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {['ALL', 'STUDENT', 'LECTURER', 'TECHNICIAN'].map((filter) => (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setApprovalFilter(filter)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                    approvalFilter === filter
-                      ? 'border-[#0f6e73]/20 bg-[#0f6e73]/10 text-[#0b5e63]'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {filter === 'ALL'
-                    ? 'All'
-                    : filter === 'TECHNICIAN'
-                      ? 'Technicians'
-                      : `${filter.charAt(0)}${filter.slice(1).toLowerCase()}s`}
-                </button>
-              ))}
-            </div>
-
-            {adminError && (
-              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {adminError}
-              </div>
-            )}
-
-            {adminNotice && (
-              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {adminNotice}
-              </div>
-            )}
-
-            <div className="mt-6 overflow-x-auto rounded-[26px] border border-slate-200">
-              <div className="min-w-[1120px]">
-                <div className="grid grid-cols-[1.15fr_1fr_0.8fr_0.9fr_1fr_1.3fr] gap-4 bg-slate-50 px-5 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  <span>User</span>
-                  <span>Email</span>
-                  <span>Role</span>
-                  <span>Approval</span>
-                  <span>Request</span>
-                  <span>Actions</span>
-                </div>
-
-                <div className="divide-y divide-slate-200">
-                  {pendingApprovalUsers.length > 0 ? (
-                    pendingApprovalUsers.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="grid grid-cols-[1.15fr_1fr_0.8fr_0.9fr_1fr_1.3fr] gap-4 px-5 py-5 text-sm text-slate-600"
-                      >
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {entry.name}
-                          </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">
-                            {entry.authProvider}
-                          </p>
-                        </div>
-
-                        <div>{entry.email}</div>
-
-                        <div className="flex items-center">
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
-                            {entry.role}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center">
-                          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-                            {entry.approvalStatus}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center text-xs text-slate-500">
-                          {entry.requestedUserType || entry.userType || 'No request'}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {entry.requestedUserType && (
-                            <button
-                              onClick={() =>
-                                handleAcademicApproval(
-                                  entry.id,
-                                  entry.requestedUserType
-                                )
-                              }
-                              className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                            >
-                              Approve {entry.requestedUserType}
-                            </button>
-                          )}
-
-                          {entry.approvalStatus === 'PENDING' &&
-                            entry.role === 'USER' &&
-                            entry.userType &&
-                            !entry.requestedUserType && (
-                              <button
-                                onClick={() =>
-                                  handleApprovalUpdate(entry.id, 'APPROVED')
-                                }
-                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                              >
-                                Approve
-                              </button>
-                            )}
-
-                          {entry.approvalStatus === 'PENDING' &&
-                            entry.role === 'TECHNICIAN' && (
-                              <button
-                                onClick={() =>
-                                  handleApprovalUpdate(entry.id, 'APPROVED')
-                                }
-                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                              >
-                                Approve Technician
-                              </button>
-                            )}
-
-                          <button
-                            onClick={() =>
-                              handleApprovalUpdate(entry.id, 'REJECTED')
-                            }
-                            className="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                          >
-                            Reject
-                          </button>
-                        </div>
+            {filteredUsers.length === 0 ? (
+              <EmptyState
+                title="No pending approvals"
+                subtitle="All requests have been reviewed."
+              />
+            ) : (
+              filteredUsers.map((user) => (
+                <div key={user.id} className="border-b border-gray-50 last:border-0">
+                  <div className="grid grid-cols-4 items-center gap-4 px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={user.name} color={getAvatarColor(user)} />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-400">{user.email}</p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="px-5 py-8 text-sm text-slate-500">
-                      No pending approvals found for this filter.
+                    </div>
+
+                    <div>
+                      <Badge
+                        status={user.requestedUserType || user.userType || user.role}
+                        label={user.requestedUserType || user.userType || user.role}
+                      />
+                    </div>
+
+                    <div className="text-xs text-gray-400">
+                      {timeAgo(user.createdAt)}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprove(user)}
+                        className="rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56] transition hover:bg-[#1D9E75] hover:text-white"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRejectingId(user.id);
+                          setRejectReason('');
+                        }}
+                        className="rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#E24B4A] hover:text-white"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+
+                  {rejectingId === user.id && (
+                    <div className="flex items-center gap-3 border-b border-gray-100 bg-[#FFFBF5] px-5 py-3">
+                      <input
+                        placeholder="Reason for rejection..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                      />
+                      <button
+                        onClick={() => handleReject(user)}
+                        className="rounded-lg bg-[#E24B4A] px-3 py-2 text-sm text-white"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRejectingId(null);
+                          setRejectReason('');
+                        }}
+                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
-        </div>
+        </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default PendingApprovalsPage
+export default PendingApprovalsPage;

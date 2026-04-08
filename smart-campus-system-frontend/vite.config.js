@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api/v1': 'http://localhost:8080',
-      '/oauth2': 'http://localhost:8080',
-      '/login/oauth2': 'http://localhost:8080',
+      '/api/v1': { target: 'http://localhost:8080', changeOrigin: true },
+      '/oauth2': { target: 'http://localhost:8080', changeOrigin: true },
+      '/login/oauth2': { target: 'http://localhost:8080', changeOrigin: true },
     },
   },
 })
