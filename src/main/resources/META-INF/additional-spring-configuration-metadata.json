@@ -1,0 +1,39 @@
+{
+  "properties": [
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "Base64-encoded secret used to sign JWT tokens."
+    },
+    {
+      "name": "app.jwt.expiration-ms",
+      "type": "java.lang.Long",
+      "description": "JWT expiration time in milliseconds."
+    },
+    {
+      "name": "app.frontend.url",
+      "type": "java.lang.String",
+      "description": "Frontend application base URL used for redirects."
+    },
+    {
+      "name": "app.bootstrap.admin.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to create a default approved admin user when no admin exists."
+    },
+    {
+      "name": "app.bootstrap.admin.name",
+      "type": "java.lang.String",
+      "description": "Display name for the bootstrapped admin user."
+    },
+    {
+      "name": "app.bootstrap.admin.email",
+      "type": "java.lang.String",
+      "description": "Email address for the bootstrapped admin user."
+    },
+    {
+      "name": "app.bootstrap.admin.password",
+      "type": "java.lang.String",
+      "description": "Password for the bootstrapped admin user."
+    }
+  ]
+}

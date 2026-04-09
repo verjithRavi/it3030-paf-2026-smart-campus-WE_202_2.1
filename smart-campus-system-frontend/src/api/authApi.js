@@ -18,7 +18,11 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url ?? ''
+    const isAuthEntryRequest =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register')
+
+    if (error.response?.status === 401 && !isAuthEntryRequest) {
       removeToken()
       window.location.href = '/'
     }
