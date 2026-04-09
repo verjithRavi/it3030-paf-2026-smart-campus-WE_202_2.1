@@ -28,7 +28,7 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getNotificationsForCurrentUser());
     }
 
-    @GetMapping("/unread-count")
+    @GetMapping({"/unread-count", "/unread_count"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UnreadCountResponse> getUnreadCount() {
         return ResponseEntity.ok(notificationService.getUnreadCount());
