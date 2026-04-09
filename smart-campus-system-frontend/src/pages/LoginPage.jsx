@@ -1,108 +1,128 @@
-import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import AuthLayout from '../components/AuthLayout'
-import { loginUser } from '../api/authApi'
-import { setToken } from '../utils/token'
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
+import Spinner from '../components/ui/Spinner';
+import { loginUser } from '../api/authApi';
+import { INPUT_CLASS, PRIMARY_BTN } from '../constants/theme';
+import { setToken } from '../utils/token';
 
 function LoginPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
+    if (params.get('registered') === 'true') {
+      setSuccessMessage('Account created successfully. Awaiting admin approval.');
+    }
+  }, [location.search]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     try {
-      const data = await loginUser(formData)
-      setToken(data.token)
-      navigate('/dashboard')
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          'Login failed. Please check your email and password.'
-      )
+      const data = await loginUser({ email, password });
+      setToken(data.token);
+      navigate('/dashboard');
+    } catch (error) {
+      setError(error.response?.data?.message || 'Invalid email or password');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const handleGoogleLogin = () => {
-    window.location.href = '/oauth2/authorization/google'
-  }
+  };
 
   return (
-    <AuthLayout
-      title="Welcome Back"
-      subtitle="Sign in to continue managing support requests, service access, approvals, and smart campus operations."
-      sideTitle="One secure portal for smart campus access."
-      sideText="From daily operations to role-based administration, everything starts with a clean and trusted sign-in experience."
-    >
-      {location.state?.notice && (
-        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {location.state.notice}
+    <AuthLayout>
+      {successMessage && (
+        <div className="mb-4 rounded-xl border border-[#1D9E75] bg-[#E1F5EE] p-3 text-sm text-[#0F6E56]">
+          <div className="flex items-start gap-2">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="mt-0.5 flex-shrink-0"
+            >
+              <path
+                d="M16.667 5L7.5 14.167 3.333 10"
+                stroke="#0F6E56"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <p>{successMessage}</p>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-            required
-          />
-        </div>
+      <h1 className="text-xl font-medium text-gray-900">Sign in</h1>
+      <p className="mb-6 text-sm text-gray-400">Welcome back to Smart Campus</p>
 
-        <div>
-          <div className="mb-1 flex items-center justify-between">
-            <label className="block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0f6e73]">
-              Protected
-            </span>
-          </div>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
-            required
+      <button
+        type="button"
+        onClick={() => {
+          window.location.href = '/oauth2/authorization/google';
+        }}
+        className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path
+            fill="#4285F4"
+            d="M17.64 9.2045c0-.6382-.0573-1.2518-.1636-1.8409H9v3.4818h4.8436c-.2086 1.125-.8427 2.0782-1.796 2.7164v2.2582h2.9086c1.7018-1.5668 2.6838-3.8741 2.6838-6.6155Z"
           />
-        </div>
+          <path
+            fill="#34A853"
+            d="M9 18c2.43 0 4.4673-.8059 5.9564-2.1791l-2.9086-2.2582c-.8059.54-1.8368.8591-3.0478.8591-2.3441 0-4.3282-1.5832-5.0364-3.7105H.9573v2.3291C2.4382 15.9832 5.4818 18 9 18Z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M3.9636 10.7105A5.4092 5.4092 0 0 1 3.6818 9c0-.5932.1018-1.17.2818-1.7105V4.9604H.9573A8.9977 8.9977 0 0 0 0 9c0 1.4523.3477 2.8273.9573 4.0396l3.0063-2.3291Z"
+          />
+          <path
+            fill="#EA4335"
+            d="M9 3.5795c1.3214 0 2.5077.4541 3.4405 1.3459l2.5813-2.5814C13.4632.8918 11.426 0 9 0 5.4818 0 2.4382 2.0168.9573 4.9604l3.0063 2.3291C4.6718 5.1627 6.6559 3.5795 9 3.5795Z"
+          />
+        </svg>
+        <span>Continue with Google</span>
+      </button>
 
-        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-xs uppercase tracking-[0.22em] text-slate-500">
-          <span>Campus verified access</span>
-          <span className="font-semibold text-slate-700">JWT Active</span>
-        </div>
+      <div className="relative my-4 flex items-center">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="px-3 text-xs text-gray-400">or</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <input
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={INPUT_CLASS}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={INPUT_CLASS}
+          required
+        />
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-2 rounded-xl border border-[#E24B4A] bg-[#FCEBEB] p-3 text-sm text-[#A32D2D]">
             {error}
           </div>
         )}
@@ -110,38 +130,30 @@ function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] py-3.5 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105 disabled:opacity-60"
+          className={`${PRIMARY_BTN} flex items-center justify-center gap-2`}
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? <Spinner size="sm" /> : 'Sign in'}
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200"></div>
-        <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Or continue
+      <p className="mt-4 text-center text-xs text-gray-400">
+        Don&apos;t have an account?{' '}
+        <span
+          className="cursor-pointer font-medium text-[#0F6E56]"
+          onClick={() => navigate('/register')}
+          role="link"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              navigate('/register');
+            }
+          }}
+        >
+          Register
         </span>
-        <div className="h-px flex-1 bg-slate-200"></div>
-      </div>
-
-      <button
-        onClick={handleGoogleLogin}
-        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition hover:bg-slate-50"
-      >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-sm font-bold">
-          G
-        </span>
-        Continue with Google
-      </button>
-
-      <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
-        Need a new account? You can register as a normal user, student, or lecturer.{' '}
-        <Link to="/register" className="font-semibold text-slate-900">
-          Create one
-        </Link>
-      </div>
+      </p>
     </AuthLayout>
-  )
+  );
 }
 
-export default LoginPage
+export default LoginPage;

@@ -1,0 +1,233 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import EmptyState from '../components/ui/EmptyState';
+import PageHeader from '../components/ui/PageHeader';
+import Spinner from '../components/ui/Spinner';
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../api/notificationApi';
+
+const tabMap = {
+  ALL: () => true,
+  APPROVALS: (n) => n.type === 'ACCESS_REQUEST_SUBMITTED',
+  BOOKINGS: (n) =>
+    ['BOOKING_APPROVED', 'BOOKING_REJECTED', 'BOOKING_CANCELLED'].includes(
+      n.type
+    ),
+  TICKETS: (n) => n.type === 'TICKET_STATUS_CHANGED',
+  COMMENTS: (n) => n.type === 'TICKET_COMMENT_ADDED',
+  ACCESS: (n) =>
+    [
+      'ACCESS_APPROVED',
+      'ACCESS_REJECTED',
+      'ACCOUNT_ACTIVATED',
+      'ACCOUNT_DEACTIVATED',
+      'ACCESS_REQUEST_SUBMITTED',
+    ].includes(n.type),
+};
+
+const typeColor = {
+  ACCESS_REQUEST_SUBMITTED: 'bg-[#FAEEDA] text-[#854F0B]',
+  BOOKING_APPROVED: 'bg-[#EAF3DE] text-[#3B6D11]',
+  BOOKING_REJECTED: 'bg-[#FCEBEB] text-[#A32D2D]',
+  BOOKING_CANCELLED: 'bg-[#FCEBEB] text-[#A32D2D]',
+  TICKET_STATUS_CHANGED: 'bg-[#E6F1FB] text-[#185FA5]',
+  TICKET_COMMENT_ADDED: 'bg-[#E6F1FB] text-[#185FA5]',
+  ACCESS_APPROVED: 'bg-[#EAF3DE] text-[#3B6D11]',
+  ACCESS_REJECTED: 'bg-[#FCEBEB] text-[#A32D2D]',
+  ACCOUNT_ACTIVATED: 'bg-[#EAF3DE] text-[#3B6D11]',
+  ACCOUNT_DEACTIVATED: 'bg-[#FCEBEB] text-[#A32D2D]',
+  GENERAL: 'bg-gray-100 text-gray-600',
+};
+
+const typeLabel = {
+  ACCESS_REQUEST_SUBMITTED: 'Approval',
+  BOOKING_APPROVED: 'Booking',
+  BOOKING_REJECTED: 'Booking',
+  BOOKING_CANCELLED: 'Booking',
+  TICKET_STATUS_CHANGED: 'Ticket',
+  TICKET_COMMENT_ADDED: 'Comment',
+  ACCESS_APPROVED: 'Access',
+  ACCESS_REJECTED: 'Access',
+  ACCOUNT_ACTIVATED: 'Account',
+  ACCOUNT_DEACTIVATED: 'Account',
+  GENERAL: 'General',
+};
+
+function NotificationsPage() {
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [error, setError] = useState('');
+
+  const getNotificationRoute = (notification) => {
+    if (notification.type === 'ACCESS_REQUEST_SUBMITTED') {
+      return '/pending-approvals';
+    }
+
+    if (
+      [
+        'ACCESS_APPROVED',
+        'ACCESS_REJECTED',
+        'ACCOUNT_ACTIVATED',
+        'ACCOUNT_DEACTIVATED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    if (
+      [
+        'BOOKING_APPROVED',
+        'BOOKING_REJECTED',
+        'BOOKING_CANCELLED',
+        'TICKET_STATUS_CHANGED',
+        'TICKET_COMMENT_ADDED',
+      ].includes(notification.type)
+    ) {
+      return '/dashboard';
+    }
+
+    return '/notifications';
+  };
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getNotifications();
+      setNotifications(res.data);
+    } catch {
+      setNotifications([]);
+      setError('Unable to load notifications right now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const handleMarkAll = async () => {
+    try {
+      await markAllNotificationsRead();
+      fetchNotifications();
+    } catch {
+      setError('Unable to mark all notifications as read.');
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        await markNotificationRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id ? { ...item, isRead: true } : item
+          )
+        );
+      }
+
+      navigate(getNotificationRoute(notification));
+    } catch {
+      setError('Unable to open this notification right now.');
+    }
+  };
+
+  const filteredNotifications = notifications.filter(tabMap[activeTab]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#FAFBFC]">
+      <Navbar />
+      <main className="max-w-4xl mx-auto px-6 py-6">
+        <PageHeader
+          title="Notifications"
+          subtitle="Stay updated on approvals, tickets, and comments."
+          action={
+            <button
+              onClick={handleMarkAll}
+              className="border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 transition"
+            >
+              Mark all as read
+            </button>
+          }
+        />
+
+        <div className="mb-4 flex gap-2">
+          {Object.keys(tabMap).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={
+                activeTab === tab
+                  ? 'bg-white border border-gray-200 text-gray-900 font-medium rounded-xl px-4 py-2 text-sm'
+                  : 'text-gray-400 hover:text-gray-600 rounded-xl px-4 py-2 text-sm transition'
+              }
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+          {error ? (
+            <div className="px-5 py-6 text-sm text-[#A32D2D]">{error}</div>
+          ) : filteredNotifications.length === 0 ? (
+            <EmptyState
+              title="No notifications here"
+              subtitle="Check back later for updates."
+            />
+          ) : (
+            filteredNotifications.map((n) => (
+              <div
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={`flex cursor-pointer items-start gap-3 px-5 py-4 border-b border-gray-50 transition hover:bg-gray-50 last:border-0 ${
+                  !n.isRead ? 'bg-[#F0FBF7]' : ''
+                }`}
+              >
+                <div
+                  className={`w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0 ${
+                    !n.isRead ? 'bg-[#1D9E75]' : 'bg-gray-200'
+                  }`}
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                    {n.message}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-300">{n.timeAgo}</p>
+                </div>
+                <span
+                  className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs ${
+                    typeColor[n.type] || 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {typeLabel[n.type] || 'Info'}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default NotificationsPage;
