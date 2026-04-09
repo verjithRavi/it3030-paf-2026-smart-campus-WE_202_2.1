@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import AdminSidebar from '../components/AdminSidebar';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
@@ -99,31 +98,21 @@ function UserDirectoryPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-        <div className="flex flex-1 flex-col">
-          <Navbar />
-          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex flex-1 flex-col">
-        <Navbar />
-        <main className="flex-1 px-6 py-6">
+    <AppShell user={{ role: 'ADMIN' }} contentClassName="w-full max-w-[1280px] px-6 py-6">
           <PageHeader
             title={categoryTitle + ' directory'}
             subtitle={'Manage and monitor ' + categoryTitle.toLowerCase() + ' accounts.'}
             action={
               <button
                 onClick={() => navigate('/users/' + category + '/create')}
-                className="rounded-xl bg-[#0F6E56] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#085041]"
+                className="rounded-full bg-[#0F6E56] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#085041]"
               >
                 + Add {categoryTitle.slice(0, -1)}
               </button>
@@ -137,10 +126,10 @@ function UserDirectoryPage() {
             placeholder={
               'Search ' + categoryTitle.toLowerCase() + ' by name or email...'
             }
-            className="mb-4 w-72 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]"
+            className="mb-4 w-72 rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1D9E75]"
           />
 
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+          <div className="overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
             {notice && (
               <div className="border-b border-gray-100 px-5 py-4 text-sm text-[#0F6E56]">
                 {notice}
@@ -214,15 +203,15 @@ function UserDirectoryPage() {
                         onClick={() => handleToggleStatus(user)}
                         className={
                           user.isActive
-                            ? 'rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D]'
-                            : 'rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56]'
+                            ? 'rounded-full border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D]'
+                            : 'rounded-full border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56]'
                         }
                       >
                         {user.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user)}
-                        className="rounded-lg border border-[#E24B4A] bg-white px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#FCEBEB]"
+                        className="rounded-full border border-[#E24B4A] bg-white px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#FCEBEB]"
                       >
                         Delete
                       </button>
@@ -232,9 +221,7 @@ function UserDirectoryPage() {
               ))
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 

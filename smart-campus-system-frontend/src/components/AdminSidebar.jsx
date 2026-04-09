@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getAllUsers } from '../api/authApi';
+import { bookingApi } from '../api/bookingApi';
 import { NAV_ACTIVE, NAV_INACTIVE } from '../constants/theme';
 
 function Icon({ type }) {
@@ -38,6 +39,22 @@ function Icon({ type }) {
     );
   }
 
+  if (type === 'calendar') {
+    return (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      >
+        <rect x="3" y="4" width="14" height="13" rx="2" />
+        <path d="M6 2.5v3M14 2.5v3M3 8h14" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   return (
     <svg
       width="14"
@@ -56,21 +73,27 @@ function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
+  const [pendingBookingCount, setPendingBookingCount] = useState(0);
 
   useEffect(() => {
-    const loadPendingCount = async () => {
+    const loadPendingCounts = async () => {
       try {
-        const users = await getAllUsers();
+        const [users, bookings] = await Promise.all([
+          getAllUsers(),
+          bookingApi.getAllBookings({ status: 'PENDING' }),
+        ]);
         const count = users.filter(
           (user) => user.approvalStatus === 'PENDING'
         ).length;
         setPendingCount(count);
+        setPendingBookingCount(bookings.length);
       } catch {
         setPendingCount(0);
+        setPendingBookingCount(0);
       }
     };
 
-    loadPendingCount();
+    loadPendingCounts();
   }, []);
 
   const navItems = [
@@ -81,14 +104,28 @@ function AdminSidebar() {
       icon: 'check',
       badge: pendingCount,
     },
+    {
+      label: 'Booking approvals',
+      path: '/admin/bookings',
+      icon: 'calendar',
+      badge: pendingBookingCount,
+    },
     { label: 'Students', path: '/users/students', icon: 'list' },
     { label: 'Lecturers', path: '/users/lecturers', icon: 'list' },
     { label: 'Technicians', path: '/users/technicians', icon: 'list' },
   ];
 
   return (
-    <aside className="flex min-h-screen w-52 flex-col border-r border-gray-100 bg-gray-50 py-4">
-      <nav className="flex-1 space-y-0.5 px-2">
+    <aside className="glass-panel sticky top-0 flex min-h-screen w-60 flex-col border-r border-white/60 bg-white/70 px-3 py-5">
+      <div className="mb-5 px-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#0F6E56]">
+          Admin console
+        </p>
+        <p className="mt-2 text-sm leading-6 text-gray-500">
+          Review approvals, bookings, and campus directory activity.
+        </p>
+      </div>
+      <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import { getCurrentUser } from '../api/authApi';
+import AppShell from '../components/AppShell';
 import EmptyState from '../components/ui/EmptyState';
 import PageHeader from '../components/ui/PageHeader';
 import Spinner from '../components/ui/Spinner';
@@ -59,6 +60,7 @@ const typeLabel = {
 
 function NotificationsPage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
@@ -99,6 +101,8 @@ function NotificationsPage() {
     setLoading(true);
     setError('');
     try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
       const res = await getNotifications();
       setNotifications(res.data);
     } catch {
@@ -143,41 +147,36 @@ function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
-          <Spinner size="lg" />
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFC]">
-      <Navbar />
-      <main className="max-w-4xl mx-auto px-6 py-6">
+    <AppShell user={user} contentClassName="w-full max-w-[1100px] px-6 py-6">
         <PageHeader
           title="Notifications"
           subtitle="Stay updated on approvals, tickets, and comments."
           action={
             <button
               onClick={handleMarkAll}
-              className="border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-500 hover:bg-gray-50 transition"
+              className="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-500 transition hover:bg-gray-50"
             >
               Mark all as read
             </button>
           }
         />
 
-        <div className="mb-4 flex gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
           {Object.keys(tabMap).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={
                 activeTab === tab
-                  ? 'bg-white border border-gray-200 text-gray-900 font-medium rounded-xl px-4 py-2 text-sm'
-                  : 'text-gray-400 hover:text-gray-600 rounded-xl px-4 py-2 text-sm transition'
+                    ? 'rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900'
+                    : 'rounded-full px-4 py-2 text-sm text-gray-400 transition hover:text-gray-600'
               }
             >
               {tab}
@@ -185,7 +184,7 @@ function NotificationsPage() {
           ))}
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           {error ? (
             <div className="px-5 py-6 text-sm text-[#A32D2D]">{error}</div>
           ) : filteredNotifications.length === 0 ? (
@@ -198,7 +197,7 @@ function NotificationsPage() {
               <div
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className={`flex cursor-pointer items-start gap-3 px-5 py-4 border-b border-gray-50 transition hover:bg-gray-50 last:border-0 ${
+                className={`flex cursor-pointer items-start gap-3 border-b border-gray-50 px-5 py-4 transition hover:bg-gray-50 last:border-0 ${
                   !n.isRead ? 'bg-[#F0FBF7]' : ''
                 }`}
               >
@@ -225,8 +224,7 @@ function NotificationsPage() {
             ))
           )}
         </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }
 

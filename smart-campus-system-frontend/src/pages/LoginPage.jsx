@@ -4,7 +4,7 @@ import AuthLayout from '../components/AuthLayout';
 import Spinner from '../components/ui/Spinner';
 import { loginUser } from '../api/authApi';
 import { INPUT_CLASS, PRIMARY_BTN } from '../constants/theme';
-import { setToken } from '../utils/token';
+import { setAuthSession } from '../utils/token';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -30,11 +30,23 @@ function LoginPage() {
     setError('');
 
     try {
-      const data = await loginUser({ email, password });
-      setToken(data.token);
-      navigate('/dashboard');
+      const data = await loginUser({
+        email: email.trim(),
+        password,
+      });
+      setAuthSession(data);
+      navigate(data.role === 'ADMIN' ? '/dashboard' : '/home');
     } catch (error) {
-      setError(error.response?.data?.message || 'Invalid email or password');
+      const validationMessages = error.response?.data?.messages;
+      const firstValidationMessage = validationMessages
+        ? Object.values(validationMessages)[0]
+        : null;
+
+      setError(
+        error.response?.data?.message ||
+          firstValidationMessage ||
+          'Invalid email or password'
+      );
     } finally {
       setLoading(false);
     }

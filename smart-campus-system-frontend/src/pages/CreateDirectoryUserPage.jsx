@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import AdminSidebar from '../components/AdminSidebar'
-import Navbar from '../components/Navbar'
+import AppShell from '../components/AppShell'
+import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
 import { createManagedUser, getCurrentUser, registerUser } from '../api/authApi'
 import { removeToken } from '../utils/token'
@@ -37,7 +37,6 @@ function CreateDirectoryUserPage() {
 
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -157,54 +156,32 @@ function CreateDirectoryUserPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-        <div className="flex flex-1 flex-col">
-          <Navbar />
-          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
+        <Spinner size="lg" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-slate-900">
-      <div className="relative min-h-screen overflow-hidden bg-gray-50">
-        <Navbar
-          user={user}
-          onMenuToggle={() => setSidebarOpen(true)}
-          onUserUpdate={setUser}
-        />
+    <AppShell user={user} contentClassName="w-full max-w-[1100px] px-6 py-6">
+      <PageHeader
+        title={config.title}
+        subtitle="Add a new campus user with a consistent setup flow."
+        action={
+          <button
+            type="button"
+            onClick={() => navigate(`/users/${category}`)}
+            className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Back to List
+          </button>
+        }
+      />
 
-        <AdminSidebar
-          user={user}
-          sidebarOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          activeItem={config.activeKey}
-        />
-
-        <div className="min-h-[calc(100vh-72px)] px-6 py-6">
-          <section className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-                  User Creation
-                </p>
-                <h2 className="mt-3 text-4xl font-semibold leading-none text-slate-900">
-                  {config.title}
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate(`/users/${category}`)}
-                className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Back to List
-              </button>
-            </div>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
+            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
+              User Creation
+            </p>
 
             {formError && (
               <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -225,7 +202,7 @@ function CreateDirectoryUserPage() {
                 value={formState.name}
                 onChange={handleChange}
                 placeholder="Full name"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
                 required
               />
               <input
@@ -234,7 +211,7 @@ function CreateDirectoryUserPage() {
                 value={formState.email}
                 onChange={handleChange}
                 placeholder="Email address"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
                 required
               />
               <input
@@ -243,7 +220,7 @@ function CreateDirectoryUserPage() {
                 value={formState.password}
                 onChange={handleChange}
                 placeholder="Password"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
                 required
               />
               <input
@@ -252,7 +229,7 @@ function CreateDirectoryUserPage() {
                 value={formState.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm password"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
                 required
               />
               <input
@@ -261,7 +238,7 @@ function CreateDirectoryUserPage() {
                 value={formState.phoneNumber}
                 onChange={handleChange}
                 placeholder="Phone number"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
               />
               <input
                 type="text"
@@ -269,23 +246,21 @@ function CreateDirectoryUserPage() {
                 value={formState.department}
                 onChange={handleChange}
                 placeholder="Department"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
               />
 
               <div className="md:col-span-2">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] px-6 py-3 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#0b5e63,#113d41)] px-6 py-3 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {submitting ? <Spinner size="sm" /> : config.submitLabel}
                 </button>
               </div>
             </form>
-          </section>
-        </div>
-      </div>
-    </div>
+      </section>
+    </AppShell>
   )
 }
 

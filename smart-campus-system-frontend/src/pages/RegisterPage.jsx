@@ -61,19 +61,25 @@ function RegisterPage() {
 
     try {
       await registerUser({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
         confirmPassword,
-        phoneNumber,
-        department,
+        phoneNumber: phoneNumber.trim(),
+        department: department.trim(),
         userType,
         registrationType: userType,
       });
       navigate('/?registered=true');
     } catch (error) {
+      const validationMessages = error.response?.data?.messages;
+      const firstValidationMessage = validationMessages
+        ? Object.values(validationMessages)[0]
+        : null;
+
       setError(
         error.response?.data?.message ||
+          firstValidationMessage ||
           'Registration failed. Please try again.'
       );
     } finally {

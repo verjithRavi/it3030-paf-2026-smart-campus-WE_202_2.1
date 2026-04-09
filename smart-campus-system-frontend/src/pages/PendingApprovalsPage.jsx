@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import AdminSidebar from '../components/AdminSidebar';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
@@ -139,50 +138,40 @@ function PendingApprovalsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar />
-        <div className="flex flex-1 flex-col">
-          <Navbar />
-          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex flex-1 flex-col">
-        <Navbar />
-        <main className="max-w-5xl flex-1 px-6 py-6">
+    <AppShell user={{ role: 'ADMIN' }} contentClassName="w-full max-w-[1200px] px-6 py-6">
           <PageHeader
             title="Pending approvals"
             subtitle="Review and manage user access requests."
           />
 
           {toast && (
-            <div className="mb-4 rounded-xl border border-[#1D9E75] bg-[#E1F5EE] px-4 py-3 text-sm text-[#0F6E56]">
+            <div className="mb-4 rounded-2xl border border-[#1D9E75] bg-[#E1F5EE] px-4 py-3 text-sm text-[#0F6E56]">
               {toast}
             </div>
           )}
 
           {error && (
-            <div className="mb-4 rounded-xl border border-[#E24B4A] bg-[#FCEBEB] px-4 py-3 text-sm text-[#A32D2D]">
+            <div className="mb-4 rounded-2xl border border-[#E24B4A] bg-[#FCEBEB] px-4 py-3 text-sm text-[#A32D2D]">
               {error}
             </div>
           )}
 
-          <div className="mb-5 flex gap-2">
+          <div className="mb-5 flex flex-wrap gap-2">
             {TABS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={
                   activeTab === tab
-                    ? 'rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900'
-                    : 'rounded-xl px-4 py-2 text-sm text-gray-400 transition hover:text-gray-600'
+                    ? 'rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm'
+                    : 'rounded-full px-4 py-2 text-sm text-gray-400 transition hover:text-gray-600'
                 }
               >
                 {tab} ({counts[tab]})
@@ -190,7 +179,7 @@ function PendingApprovalsPage() {
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+          <div className="overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
             <div className="grid grid-cols-4 border-b border-gray-100 bg-gray-50 px-5 py-3 text-xs font-medium uppercase tracking-wide text-gray-400">
               <span>User</span>
               <span>Requested role</span>
@@ -231,7 +220,7 @@ function PendingApprovalsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleApprove(user)}
-                        className="rounded-lg border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56] transition hover:bg-[#1D9E75] hover:text-white"
+                        className="rounded-full border border-[#1D9E75] bg-[#E1F5EE] px-3 py-1.5 text-xs text-[#0F6E56] transition hover:bg-[#1D9E75] hover:text-white"
                       >
                         Approve
                       </button>
@@ -240,7 +229,7 @@ function PendingApprovalsPage() {
                           setRejectingId(user.id);
                           setRejectReason('');
                         }}
-                        className="rounded-lg border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#E24B4A] hover:text-white"
+                        className="rounded-full border border-[#E24B4A] bg-[#FCEBEB] px-3 py-1.5 text-xs text-[#A32D2D] transition hover:bg-[#E24B4A] hover:text-white"
                       >
                         Reject
                       </button>
@@ -253,11 +242,11 @@ function PendingApprovalsPage() {
                         placeholder="Reason for rejection..."
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        className="flex-1 rounded-2xl border border-gray-200 px-3 py-2 text-sm"
                       />
                       <button
                         onClick={() => handleReject(user)}
-                        className="rounded-lg bg-[#E24B4A] px-3 py-2 text-sm text-white"
+                        className="rounded-full bg-[#E24B4A] px-4 py-2 text-sm text-white"
                       >
                         Confirm
                       </button>
@@ -266,7 +255,7 @@ function PendingApprovalsPage() {
                           setRejectingId(null);
                           setRejectReason('');
                         }}
-                        className="rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-600"
+                        className="rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-600"
                       >
                         Cancel
                       </button>
@@ -276,9 +265,7 @@ function PendingApprovalsPage() {
               ))
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 

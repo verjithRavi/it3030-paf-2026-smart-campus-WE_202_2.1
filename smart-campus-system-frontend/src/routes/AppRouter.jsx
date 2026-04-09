@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { getCurrentUser as fetchCurrentUser } from '../api/authApi';
+import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import OAuthSuccessPage from '../pages/OAuthSuccessPage';
@@ -9,7 +12,10 @@ import PendingApprovalsPage from '../pages/PendingApprovalsPage';
 import UserDirectoryPage from '../pages/UserDirectoryPage';
 import CreateDirectoryUserPage from '../pages/CreateDirectoryUserPage';
 import NotFoundPage from '../pages/NotFoundPage';
-import { getToken, hasToken } from '../utils/token';
+import NewBookingPage from '../pages/NewBookingPage';
+import MyBookingsPage from '../pages/MyBookingsPage';
+import AdminBookingsPage from '../pages/AdminBookingsPage';
+import { getCurrentUserData, getToken, removeToken, setCurrentUserData } from '../utils/token';
 
 function ProtectedRoute({ children }) {
   const token = getToken();
@@ -21,35 +27,48 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function GuestRoute({ children }) {
-  if (hasToken()) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
-}
-
 function AppRouter() {
+  useEffect(() => {
+    const syncUser = async () => {
+      if (!getToken() || getCurrentUserData()) {
+        return;
+      }
+
+      try {
+        const user = await fetchCurrentUser();
+        setCurrentUserData(user);
+      } catch {
+        removeToken();
+      }
+    };
+
+    syncUser();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
         <Route
           path="/"
           element={
-            <GuestRoute>
-              <LoginPage />
-            </GuestRoute>
+            <LoginPage />
           }
         />
         <Route
           path="/register"
           element={
-            <GuestRoute>
-              <RegisterPage />
-            </GuestRoute>
+            <RegisterPage />
           }
         />
         <Route path="/oauth-success" element={<OAuthSuccessPage />} />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
@@ -95,6 +114,30 @@ function AppRouter() {
           element={
             <ProtectedRoute>
               <CreateDirectoryUserPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings/new"
+          element={
+            <ProtectedRoute>
+              <NewBookingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bookings/my"
+          element={
+            <ProtectedRoute>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/bookings"
+          element={
+            <ProtectedRoute>
+              <AdminBookingsPage />
             </ProtectedRoute>
           }
         />

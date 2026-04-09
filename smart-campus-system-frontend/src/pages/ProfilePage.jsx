@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import AdminSidebar from '../components/AdminSidebar';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
 import Spinner from '../components/ui/Spinner';
 import PageHeader from '../components/ui/PageHeader';
 import { INPUT_CLASS, PRIMARY_BTN } from '../constants/theme';
@@ -68,30 +67,20 @@ function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        {user?.role === 'ADMIN' && <AdminSidebar />}
-        <div className="flex flex-1 flex-col">
-          <Navbar />
-          <div className="flex min-h-[calc(100vh-61px)] items-center justify-center">
-            <Spinner size="lg" />
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {user?.role === 'ADMIN' && <AdminSidebar />}
-      <div className="flex flex-1 flex-col">
-        <Navbar />
-        <main className="max-w-4xl flex-1 px-6 py-6">
+    <AppShell user={user} contentClassName="w-full max-w-[1100px] px-6 py-6">
           <PageHeader
             title="Edit profile"
             subtitle="Update your personal account details."
           />
 
-          <section className="rounded-2xl border border-gray-100 bg-white p-5">
+          <section className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
             <form
               onSubmit={handleSubmit}
               className="grid grid-cols-1 gap-4 md:grid-cols-2"
@@ -144,16 +133,14 @@ function ProfilePage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className={`${PRIMARY_BTN} flex w-auto items-center justify-center gap-2 px-5`}
+                  className={`${PRIMARY_BTN} flex w-auto items-center justify-center gap-2 rounded-full px-6`}
                 >
                   {saving ? <Spinner size="sm" /> : 'Save profile'}
                 </button>
               </div>
             </form>
           </section>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 

@@ -4,7 +4,7 @@ import { getCurrentUser } from '../api/authApi';
 import NotificationBell from './NotificationBell';
 import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
-import { removeToken } from '../utils/token';
+import { getCurrentUserData, removeToken, setCurrentUserData } from '../utils/token';
 
 function Navbar() {
   const navigate = useNavigate();
@@ -15,11 +15,19 @@ function Navbar() {
 
   useEffect(() => {
     const loadUser = async () => {
+      const cachedUser = getCurrentUserData()
+
+      if (cachedUser) {
+        setUser(cachedUser)
+        setLoading(false)
+      }
+
       try {
         const data = await getCurrentUser();
         setUser(data);
+        setCurrentUserData(data)
       } catch {
-        setUser(null);
+        setUser(cachedUser || null);
       } finally {
         setLoading(false);
       }
@@ -40,30 +48,35 @@ function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-3">
-      <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0F6E56]">
-          <div className="h-3 w-3 rounded-sm bg-white" />
-        </div>
-        <span className="text-sm font-medium text-gray-900">Smart Campus</span>
-      </div>
+    <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white">
+      <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between px-6 py-3">
+        <button
+          type="button"
+          onClick={() => navigate('/home')}
+          className="flex items-center gap-2 transition hover:opacity-80"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0F6E56]">
+            <div className="h-3 w-3 rounded-sm bg-white" />
+          </div>
+          <span className="text-sm font-medium text-gray-900">Smart Campus</span>
+        </button>
 
-      <div className="flex items-center gap-3">
-        <NotificationBell />
+        <div className="flex items-center gap-3">
+          <NotificationBell />
 
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setProfileOpen((o) => !o)}
-            className="flex items-center gap-2 transition hover:opacity-80"
-          >
-            <Avatar name={user?.name || ''} size="sm" />
-            <span className="hidden text-xs text-gray-600 sm:block">
-              {loading ? 'Loading...' : user?.name}
-            </span>
-          </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setProfileOpen((o) => !o)}
+              className="flex items-center gap-2 transition hover:opacity-80"
+            >
+              <Avatar name={user?.name || ''} size="sm" />
+              <span className="hidden text-xs text-gray-600 sm:block">
+                {loading ? 'Loading...' : user?.name}
+              </span>
+            </button>
 
-          {profileOpen && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-xl">
+            {profileOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-xl">
               <div className="border-b border-gray-100 px-3 py-3">
                 <div className="flex items-start gap-3">
                   <Avatar name={user?.name || ''} size="md" />
@@ -83,6 +96,50 @@ function Navbar() {
                   </div>
                 </div>
               </div>
+
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate(user?.role === 'ADMIN' ? '/dashboard' : '/home');
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M3 10.5 10 4l7 6.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1v-5.5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{user?.role === 'ADMIN' ? 'Dashboard' : 'Home'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate('/bookings/new');
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <span>Create booking</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate('/bookings/my');
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 4.5h10M5 10h10M5 15.5h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <span>My bookings</span>
+              </button>
 
               <button
                 onClick={() => {
@@ -135,7 +192,7 @@ function Navbar() {
                 onClick={() => {
                   setProfileOpen(false);
                   removeToken();
-                  navigate('/');
+                  navigate('/', { replace: true });
                 }}
                 className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-500 hover:bg-red-50"
               >
@@ -162,8 +219,9 @@ function Navbar() {
                 </svg>
                 <span>Sign out</span>
               </button>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

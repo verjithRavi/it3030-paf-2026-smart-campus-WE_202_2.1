@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, submitAccessRequest } from '../api/authApi';
+import { bookingApi } from '../api/bookingApi';
 import { getNotifications, getUnreadCount } from '../api/notificationApi';
-import AdminSidebar from '../components/AdminSidebar';
-import Navbar from '../components/Navbar';
+import AppShell from '../components/AppShell';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
+import PageHeader from '../components/ui/PageHeader';
 import Spinner from '../components/ui/Spinner';
 import StatCard from '../components/ui/StatCard';
 import { getGreeting } from '../utils/time';
@@ -21,6 +22,7 @@ function DashboardPage() {
   const [requestMessage, setRequestMessage] = useState('');
   const [error, setError] = useState('');
   const [notificationError, setNotificationError] = useState('');
+  const [pendingBookingCount, setPendingBookingCount] = useState(0);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -31,8 +33,16 @@ function DashboardPage() {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
+
+        if (currentUser.role === 'ADMIN') {
+          const pendingBookings = await bookingApi.getAllBookings({ status: 'PENDING' });
+          setPendingBookingCount(pendingBookings.length);
+        }
       } catch {
         setError('Unable to load your dashboard right now.');
+        setLoading(false);
+        return;
+      } finally {
       }
 
       try {
@@ -72,44 +82,36 @@ function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
         <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {user?.role === 'ADMIN' && <AdminSidebar />}
-      <div className="flex flex-1 flex-col">
-        <Navbar />
-        <main className="max-w-5xl flex-1 px-6 py-6">
+    <AppShell user={user} contentClassName="w-full max-w-[1200px] px-6 py-6">
           {error && (
-            <div className="mb-5 rounded-xl border border-[#E24B4A] bg-[#FCEBEB] p-4 text-sm text-[#A32D2D]">
+            <div className="mb-5 rounded-2xl border border-[#E24B4A] bg-[#FCEBEB] p-4 text-sm text-[#A32D2D]">
               {error}
             </div>
           )}
 
           {setupMode && (
-            <div className="mb-5 flex items-center justify-between rounded-xl border border-[#EF9F27] bg-[#FAEEDA] p-4 text-sm text-[#854F0B]">
+            <div className="mb-5 flex items-center justify-between rounded-2xl border border-[#EF9F27] bg-[#FAEEDA] p-4 text-sm text-[#854F0B]">
               <span>Complete your profile to get the most out of Smart Campus.</span>
               <button
                 onClick={() => navigate('/profile')}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-[#854F0B]"
+                className="rounded-full bg-white px-4 py-2 text-xs font-medium text-[#854F0B]"
               >
                 Complete profile
               </button>
             </div>
           )}
 
-          <div className="mb-6">
-            <h1 className="text-lg font-medium text-gray-900">
-              {getGreeting()}, {user?.name?.split(' ')[0]}
-            </h1>
-            <p className="mt-0.5 text-sm text-gray-400">
-              Here&apos;s what&apos;s happening on campus today.
-            </p>
-          </div>
+          <PageHeader
+            title={`${getGreeting()}, ${user?.name?.split(' ')[0]}`}
+            subtitle="Here's what's happening on campus today."
+          />
 
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard label="My bookings" value="-" sub="Coming soon" />
@@ -127,14 +129,14 @@ function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <section className="rounded-2xl border border-gray-100 bg-white p-5">
+            <section className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-sm font-medium text-gray-900">
                   Recent notifications
                 </h2>
                 <button
                   onClick={() => navigate('/notifications')}
-                  className="text-xs text-[#1D9E75]"
+                  className="text-xs font-medium text-[#1D9E75]"
                 >
                   View all
                 </button>
@@ -166,7 +168,7 @@ function DashboardPage() {
               )}
             </section>
 
-            <section className="rounded-2xl border border-gray-100 bg-white p-5">
+            <section className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
               <h2 className="mb-4 text-sm font-medium text-gray-900">
                 Account status
               </h2>
@@ -200,13 +202,13 @@ function DashboardPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleAccessRequest('STUDENT')}
-                        className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-700"
+                        className="rounded-full border border-gray-200 px-4 py-2 text-xs text-gray-700"
                       >
                         Request Student
                       </button>
                       <button
                         onClick={() => handleAccessRequest('LECTURER')}
-                        className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-700"
+                        className="rounded-full border border-gray-200 px-4 py-2 text-xs text-gray-700"
                       >
                         Request Lecturer
                       </button>
@@ -219,14 +221,14 @@ function DashboardPage() {
             </section>
 
             {user?.role === 'ADMIN' && (
-              <section className="rounded-2xl border border-gray-100 bg-white p-5 md:col-span-2">
+              <section className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)] md:col-span-2">
                 <h2 className="mb-4 text-sm font-medium text-gray-900">
                   Admin quick actions
                 </h2>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <button
                     onClick={() => navigate('/pending-approvals')}
-                    className="rounded-2xl border border-gray-200 p-4 text-left transition hover:bg-gray-50"
+                    className="rounded-[24px] border border-gray-200 p-4 text-left transition hover:bg-gray-50"
                   >
                     <p className="text-sm font-medium text-gray-900">
                       Pending approvals
@@ -237,7 +239,7 @@ function DashboardPage() {
                   </button>
                   <button
                     onClick={() => navigate('/users/students')}
-                    className="rounded-2xl border border-gray-200 p-4 text-left transition hover:bg-gray-50"
+                    className="rounded-[24px] border border-gray-200 p-4 text-left transition hover:bg-gray-50"
                   >
                     <p className="text-sm font-medium text-gray-900">
                       User directory
@@ -246,13 +248,22 @@ function DashboardPage() {
                       Manage campus user accounts.
                     </p>
                   </button>
+                  <button
+                    onClick={() => navigate('/admin/bookings')}
+                    className="rounded-[24px] border border-gray-200 p-4 text-left transition hover:bg-gray-50"
+                  >
+                    <p className="text-sm font-medium text-gray-900">
+                      Booking approvals
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Review pending booking requests{pendingBookingCount > 0 ? ` (${pendingBookingCount})` : ''}.
+                    </p>
+                  </button>
                 </div>
               </section>
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
