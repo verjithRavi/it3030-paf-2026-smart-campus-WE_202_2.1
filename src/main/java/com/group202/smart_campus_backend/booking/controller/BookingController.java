@@ -72,9 +72,11 @@ public class BookingController {
     public ResponseEntity<Booking> cancelBooking(
             @PathVariable String id,
             @RequestHeader("X-USER-ID") String userId,
-            @RequestHeader("X-USER-ROLE") String role
+            @RequestHeader("X-USER-ROLE") String role,
+            @RequestBody(required = false) BookingDecisionRequest request
     ) {
-        return ResponseEntity.ok(bookingService.cancelBooking(id, userId, role));
+        String reason = request != null ? request.getReason() : null;
+        return ResponseEntity.ok(bookingService.cancelBooking(id, userId, role, reason));
     }
 
     @DeleteMapping("/{id}")

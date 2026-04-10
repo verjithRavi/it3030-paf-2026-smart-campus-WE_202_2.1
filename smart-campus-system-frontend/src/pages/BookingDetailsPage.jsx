@@ -5,6 +5,7 @@ import { getCurrentUser } from '../api/authApi'
 import PageHeader from '../components/ui/PageHeader'
 import StatusBadge from '../components/StatusBadge'
 import RejectModal from '../components/RejectModal'
+import CancelModal from '../components/CancelModal'
 import Spinner from '../components/ui/Spinner'
 
 function DetailRow({ label, value, highlight }) {
@@ -32,6 +33,7 @@ export default function BookingDetailsPage() {
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   const loadData = async (forceRefresh = false) => {
     try {
@@ -91,14 +93,14 @@ export default function BookingDetailsPage() {
     }
   }
 
-  const handleCancel = async () => {
-    if (!window.confirm('Are you sure you want to cancel this approved booking? This cannot be undone.')) return
+  const handleCancelConfirm = async (reason) => {
     try {
       setActionLoading(true)
       setMessage('')
       setErrorMessage('')
-      const updated = await bookingApi.cancelBooking(id)
+      const updated = await bookingApi.cancelBooking(id, reason || null)
       setBooking(updated)
+      setCancelOpen(false)
       setMessage('Booking cancelled successfully.')
     } catch (err) {
       setErrorMessage(getErrorMessage(err))
@@ -131,7 +133,7 @@ export default function BookingDetailsPage() {
   const backPath = isAdmin ? '/admin/bookings' : '/bookings/my'
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+    <div className="mx-auto w-full max-w-330 px-6 py-6">
       {loading ? (
         <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
       ) : errorMessage && !booking ? (
@@ -188,11 +190,19 @@ export default function BookingDetailsPage() {
               <DetailRow label="Purpose" value={booking?.purpose} />
               <DetailRow label="Expected Attendees" value={booking?.expectedAttendees} />
               {isAdmin && <DetailRow label="Requested By" value={`${booking?.userName} (${booking?.userId})`} />}
-              {isRejected && (
+              {isRejected && booking?.adminReason && (
                 <div className="flex flex-col gap-1 py-4 border-t border-gray-100">
                   <p className="text-sm font-medium text-gray-500">Rejection Reason</p>
                   <p className="mt-1 rounded-2xl bg-[#FCEBEB] px-4 py-3 text-sm text-[#A32D2D]">
-                    {booking?.adminReason}
+                    {booking.adminReason}
+                  </p>
+                </div>
+              )}
+              {isCancelled && booking?.cancelReason && (
+                <div className="flex flex-col gap-1 py-4 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-500">Cancellation Reason</p>
+                  <p className="mt-1 rounded-2xl bg-[#fef3c7] px-4 py-3 text-sm text-[#92580a]">
+                    {booking.cancelReason}
                   </p>
                 </div>
               )}
@@ -224,7 +234,7 @@ export default function BookingDetailsPage() {
                   )}
                   {isApproved && (
                     <button
-                      onClick={handleCancel}
+                      onClick={() => setCancelOpen(true)}
                       disabled={actionLoading}
                       className="w-full rounded-full bg-[#EF9F27] py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
                     >
@@ -280,6 +290,12 @@ export default function BookingDetailsPage() {
             open={rejectOpen}
             onClose={() => setRejectOpen(false)}
             onConfirm={handleRejectConfirm}
+            loading={actionLoading}
+          />
+          <CancelModal
+            open={cancelOpen}
+            onClose={() => setCancelOpen(false)}
+            onConfirm={handleCancelConfirm}
             loading={actionLoading}
           />
         </>

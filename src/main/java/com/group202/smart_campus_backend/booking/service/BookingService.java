@@ -116,7 +116,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public Booking cancelBooking(String bookingId, String currentUserId, String currentRole) {
+    public Booking cancelBooking(String bookingId, String currentUserId, String currentRole, String cancelReason) {
         Booking booking = getBookingOrThrow(bookingId);
 
         boolean isAdmin = "ADMIN".equalsIgnoreCase(currentRole);
@@ -131,6 +131,9 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+        if (cancelReason != null && !cancelReason.trim().isEmpty()) {
+            booking.setCancelReason(cancelReason.trim());
+        }
         booking.setUpdatedAt(LocalDateTime.now());
 
         return bookingRepository.save(booking);
