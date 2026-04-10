@@ -43,6 +43,21 @@ function cleanFilters(filters) {
 }
 
 export function getErrorMessage(error) {
+  if (error?.response?.status === 409) {
+    return (
+      error?.response?.data?.message ||
+      "This resource is already booked for the selected time range. Please choose a different time."
+    );
+  }
+
+  if (error?.response?.status === 400 && error?.response?.data?.messages) {
+    const validationMessages = Object.values(error.response.data.messages).filter(Boolean);
+
+    if (validationMessages.length > 0) {
+      return validationMessages.join(" ");
+    }
+  }
+
   return (
     error?.response?.data?.message ||
     error?.response?.data?.error ||

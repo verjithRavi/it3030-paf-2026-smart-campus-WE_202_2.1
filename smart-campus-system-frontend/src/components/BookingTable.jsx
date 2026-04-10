@@ -50,7 +50,11 @@ export default function BookingTable({
               <td className="px-4 py-4 text-sm text-gray-600">
                 {booking.startTime} - {booking.endTime}
               </td>
-              <td className="px-4 py-4 text-sm text-gray-600">{booking.purpose}</td>
+              <td className="px-4 py-4 text-sm text-gray-600 max-w-45">
+                <span title={booking.purpose} className="line-clamp-2 block">
+                  {booking.purpose}
+                </span>
+              </td>
               <td className="px-4 py-4 text-sm text-gray-600">{booking.expectedAttendees}</td>
               {role === 'ADMIN' && (
                 <td className="px-4 py-4 text-sm text-gray-600">
@@ -91,7 +95,9 @@ export default function BookingTable({
                     </button>
                   )}
 
-                  {booking.status !== 'APPROVED' && onDelete && (
+                  {booking.status !== 'APPROVED' &&
+                    !(role === 'ADMIN' && booking.status === 'PENDING') &&
+                    onDelete && (
                     <button
                       className="rounded-full border border-[#E24B4A] px-3 py-2 text-xs font-medium text-[#A32D2D] transition hover:bg-[#FCEBEB]"
                       onClick={() => onDelete(booking.id)}
