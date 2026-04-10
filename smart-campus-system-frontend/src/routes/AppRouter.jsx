@@ -1,15 +1,21 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import LoginPage from '../pages/LoginPage'
 import RegisterPage from '../pages/RegisterPage'
+import LandingPage from '../pages/LandingPage'
 import OAuthSuccessPage from '../pages/OAuthSuccessPage'
 import DashboardPage from '../pages/DashboardPage'
+import CreateTicketPage from '../pages/CreateTicketPage'
+import MyTicketsPage from '../pages/MyTicketsPage'
+import TicketDetailsPage from '../pages/TicketDetailsPage'
+import AdminTicketsPage from '../pages/AdminTicketsPage'
+import TechnicianTicketsPage from '../pages/TechnicianTicketsPage'
 import { getToken, hasToken } from '../utils/token'
 
 function ProtectedRoute({ children }) {
   const token = getToken()
 
   if (!token) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   return children
@@ -26,8 +32,9 @@ function GuestRoute({ children }) {
 function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route
-        path="/"
+        path="/login"
         element={
           <GuestRoute>
             <LoginPage />
@@ -48,6 +55,46 @@ function AppRouter() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tickets/create"
+        element={
+          <ProtectedRoute>
+            <CreateTicketPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tickets/my"
+        element={
+          <ProtectedRoute>
+            <MyTicketsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tickets/:id"
+        element={
+          <ProtectedRoute>
+            <TicketDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/tickets"
+        element={
+          <ProtectedRoute>
+            <AdminTicketsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/technician/tickets"
+        element={
+          <ProtectedRoute>
+            <TechnicianTicketsPage />
           </ProtectedRoute>
         }
       />

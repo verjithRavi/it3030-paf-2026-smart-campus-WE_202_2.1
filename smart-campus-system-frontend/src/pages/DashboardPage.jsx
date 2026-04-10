@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import Navbar from '../components/Navbar'
+import AppShell from '../components/AppShell'
+import SectionCard from '../components/SectionCard'
 import {
   createManagedUser,
   getAllUsers,
@@ -86,20 +87,11 @@ function DashboardPage() {
 
   const summaryCards = useMemo(
     () => [
+      { label: 'Role', value: user?.role || 'USER' },
+      { label: 'Approval', value: user?.approvalStatus || 'APPROVED' },
       {
-        label: 'Current Role',
-        value: user?.role || 'USER',
-      },
-      {
-        label: 'Approval',
-        value: user?.approvalStatus || 'APPROVED',
-      },
-      {
-        label: 'Access Profile',
-        value:
-          user?.role !== 'USER'
-            ? user?.role
-            : user?.userType || 'Common Access',
+        label: 'Access',
+        value: user?.role !== 'USER' ? user?.role : user?.userType || 'COMMON',
       },
     ],
     [user]
@@ -278,274 +270,266 @@ function DashboardPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#eceef4] px-4 py-6 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-[1480px] rounded-[32px] bg-white/90 p-10 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-          <p className="font-serif text-4xl text-slate-900">
-            Loading dashboard...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-[#eceef4] px-4 py-6 text-slate-900 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-[1480px] space-y-6">
-        <Navbar
-          user={user}
-          onLogout={handleLogout}
-          onProfileClick={() => setShowProfile((prev) => !prev)}
-        />
-
-        {searchParams.get('setup') === 'pending' && (
-          <div className="rounded-[28px] border border-amber-200 bg-amber-50 px-6 py-4 text-sm text-amber-800">
-            Your Google account is active with common access. Use the profile panel
-            to request student or lecturer access if you need academic features.
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-          <section className="rounded-[30px] border border-white/70 bg-[linear-gradient(135deg,#0f6e73,#0b4f55)] p-8 text-white shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.28em] text-white/65">
-              Protected Workspace
-            </p>
-            <h2 className="mt-5 max-w-xl font-serif text-5xl leading-[0.98] tracking-[-0.04em]">
-              Welcome, {user?.name || 'Campus User'}
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-white/76">
-              This dashboard now separates common access from approved academic
-              access. Students and lecturers require admin approval, while admin
-              and technician accounts are created directly by an administrator.
-            </p>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {summaryCards.map((card) => (
-                <div
-                  key={card.label}
-                  className="rounded-[24px] border border-white/12 bg-white/10 p-5 backdrop-blur"
-                >
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/60">
-                    {card.label}
-                  </p>
-                  <p className="mt-3 text-2xl font-semibold text-white">
-                    {card.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Account Details
-            </p>
-            <h3 className="mt-4 font-serif text-4xl leading-none text-slate-900">
-              Profile Snapshot
-            </h3>
-
-            <div className="mt-6 space-y-4 text-sm leading-6 text-slate-600">
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <span className="font-semibold text-slate-900">Email:</span>{' '}
-                {user?.email}
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <span className="font-semibold text-slate-900">Profile:</span>{' '}
-                {user?.role !== 'USER'
-                  ? user?.role
-                  : user?.userType || 'Common User'}
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <span className="font-semibold text-slate-900">Approval:</span>{' '}
-                {user?.approvalStatus || 'APPROVED'}
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <span className="font-semibold text-slate-900">
-                  Pending academic request:
-                </span>{' '}
-                {user?.requestedUserType || 'No active request'}
-              </div>
-            </div>
-          </section>
+    <AppShell
+      user={user}
+      onLogout={handleLogout}
+      onProfileClick={() => setShowProfile((prev) => !prev)}
+    >
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        {showProfile && (
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Profile
-            </p>
-            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-              Edit your details
-            </h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Update your personal details here. Common users can also request
-              student or lecturer access from this panel.
-            </p>
-
-            <form
-              onSubmit={handleProfileSave}
-              className="mt-8 grid gap-4 md:grid-cols-2"
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-[1.1fr_0.9fr]">
+        
+        {/* Account Summary Section */}
+        <SectionCard
+          title={loading ? "" : "Account summary"}
+          action={!loading && (
+            <button
+              onClick={() => setShowProfile((prev) => !prev)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
             >
-              <input
-                type="text"
-                name="name"
-                value={profileForm.name}
-                onChange={handleProfileFieldChange}
-                placeholder="Full name"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-              />
-              <input
-                type="text"
-                name="phoneNumber"
-                value={profileForm.phoneNumber}
-                onChange={handleProfileFieldChange}
-                placeholder="Phone number"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-              />
-              <input
-                type="text"
-                name="department"
-                value={profileForm.department}
-                onChange={handleProfileFieldChange}
-                placeholder="Department"
-                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100 md:col-span-2"
-              />
-
-              {user?.role === 'USER' && (
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Request student or lecturer access
-                  </label>
-                  <select
-                    name="requestedUserType"
-                    value={profileForm.requestedUserType}
-                    onChange={handleProfileFieldChange}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-                  >
-                    <option value="">Keep current access</option>
-                    <option value="STUDENT">Student</option>
-                    <option value="LECTURER">Lecturer</option>
-                  </select>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">
-                    Any student or lecturer request needs admin approval before
-                    the academic access becomes active.
-                  </p>
-                </div>
-              )}
-
-              {profileMessage.text && (
-                <div
-                  className={`rounded-2xl px-4 py-3 text-sm md:col-span-2 ${
-                    profileMessage.type === 'error'
-                      ? 'border border-red-200 bg-red-50 text-red-700'
-                      : 'border border-emerald-200 bg-emerald-50 text-emerald-700'
-                  }`}
-                >
-                  {profileMessage.text}
-                </div>
-              )}
-
-              <div className="md:col-span-2">
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] px-6 py-3 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105"
-                >
-                  Save Profile
-                </button>
+              {showProfile ? 'Hide profile' : 'Edit profile'}
+            </button>
+          )}
+        >
+          {loading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+                <div className="h-24 bg-slate-200 rounded-xl"></div>
+                <div className="h-24 bg-slate-200 rounded-xl"></div>
               </div>
-            </form>
-          </section>
-        )}
-
-        {isCommonUser && !showProfile && (
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Common Access
-            </p>
-            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-              You are using common access
-            </h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Google users start here. If you need academic access, open Profile
-              from the top-right menu and request student or lecturer approval.
-            </p>
-
-            {hasPendingAcademicRequest && (
-              <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                Your current request is waiting for admin approval:{' '}
-                <span className="font-semibold">{user?.requestedUserType}</span>
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => handleQuickTypeRequest('STUDENT')}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Request Student Access
-              </button>
-              <button
-                onClick={() => handleQuickTypeRequest('LECTURER')}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Request Lecturer Access
-              </button>
             </div>
-          </section>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Account Information</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{user?.email}</p>
+                  </div>
+                  <div className="rounded-full bg-slate-100 p-2">
+                    <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Access Level</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {user?.role !== 'USER' ? user?.role : user?.userType || 'COMMON'}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-slate-100 p-2">
+                    <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Role Status</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{user?.role}</p>
+                  </div>
+                  <div className="rounded-full bg-slate-100 p-2">
+                    <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Approval Status</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{user?.approvalStatus || 'APPROVED'}</p>
+                  </div>
+                  <div className="rounded-full bg-slate-100 p-2">
+                    <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Profile Edit Section */}
+        {showProfile && (
+          <div className="xl:col-span-2">
+            <SectionCard title="Edit your details">
+            {loading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="h-12 bg-slate-200 rounded-lg"></div>
+                  <div className="h-12 bg-slate-200 rounded-lg"></div>
+                  <div className="h-12 bg-slate-200 rounded-lg sm:col-span-2"></div>
+                </div>
+                <div className="h-12 bg-slate-200 rounded-lg"></div>
+                <div className="flex gap-3">
+                  <div className="h-12 bg-slate-200 rounded-lg flex-1"></div>
+                  <div className="h-12 bg-slate-200 rounded-lg flex-1"></div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleProfileSave} className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                <input
+                  type="text"
+                  name="name"
+                  value={profileForm.name}
+                  onChange={handleProfileFieldChange}
+                  placeholder="Full name"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:col-span-2 lg:col-span-1"
+                />
+                <input
+                  type="text"
+                  name="phoneNumber"
+                  value={profileForm.phoneNumber}
+                  onChange={handleProfileFieldChange}
+                  placeholder="Phone number"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:col-span-2 lg:col-span-1"
+                />
+                <input
+                  type="text"
+                  name="department"
+                  value={profileForm.department}
+                  onChange={handleProfileFieldChange}
+                  placeholder="Department"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:col-span-2"
+                />
+
+                {user?.role === 'USER' && (
+                  <div className="sm:col-span-2">
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Request student or lecturer access
+                    </label>
+                    <select
+                      name="requestedUserType"
+                      value={profileForm.requestedUserType}
+                      onChange={handleProfileFieldChange}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    >
+                      <option value="">Keep current access</option>
+                      <option value="STUDENT">Student</option>
+                      <option value="LECTURER">Lecturer</option>
+                    </select>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Any student or lecturer request needs admin approval.
+                    </p>
+                  </div>
+                )}
+
+                {profileMessage.text && (
+                  <div
+                    className={`rounded-lg px-4 py-3 text-sm sm:col-span-2 ${
+                      profileMessage.type === 'error'
+                        ? 'border border-red-200 bg-red-50 text-red-700'
+                        : 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                    }`}
+                  >
+                    {profileMessage.text}
+                  </div>
+                )}
+
+                <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-500"
+                  >
+                    Save Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowProfile(false)}
+                    className="rounded-lg border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </SectionCard>
+          </div>
         )}
 
-        {hasAcademicAccess && (
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Academic Access
-            </p>
-            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-              {user.userType} workspace is active
-            </h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Your academic access has been approved. You can continue using the
-              system with your {user.userType.toLowerCase()} profile and update
-              your personal details from the profile menu whenever needed.
-            </p>
-          </section>
-        )}
-
-        {(user?.role === 'ADMIN' || user?.role === 'TECHNICIAN') && (
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-              Role Workspace
-            </p>
-            <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-              {user.role} access is active
-            </h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Your account was created directly by an administrator. You can edit
-              your profile details from the top-right menu and continue with your
-              assigned role-based responsibilities.
-            </p>
-          </section>
-        )}
-
-        {user?.role === 'ADMIN' && (
-          <section className="rounded-[30px] bg-white/95 p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
+        {/* Common User Access Section */}
+        {isCommonUser && !showProfile && (
+          <div className="xl:col-span-2">
+            <section className="rounded-2xl bg-white/95 p-4 sm:p-6 lg:p-8 shadow-[0_30px_80px_rgba(15,23,42,0.1)]">
+            {loading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-8 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-4 bg-slate-200 rounded w-full"></div>
+                <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                <div className="flex gap-3">
+                  <div className="h-10 bg-slate-200 rounded-full w-32"></div>
+                  <div className="h-10 bg-slate-200 rounded-full w-32"></div>
+                </div>
+              </div>
+            ) : (
+              <>
                 <p className="text-xs uppercase tracking-[0.26em] text-slate-400">
-                  Admin Controls
+                  Common Access
                 </p>
-                <h3 className="mt-3 font-serif text-4xl leading-none text-slate-900">
-                  User Management
+                <h3 className="mt-3 font-serif text-2xl sm:text-3xl lg:text-4xl leading-none text-slate-900">
+                  You are using common access
                 </h3>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                  Approve student and lecturer registrations, review common-user
-                  academic requests, and create new admin or technician accounts.
+                  Google users start here. If you need academic access, open Profile
+                  from the top-right menu and request student or lecturer approval.
+                </p>
+
+                {hasPendingAcademicRequest && (
+                  <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+                    Your current request is waiting for admin approval:{' '}
+                    <span className="font-semibold">{user?.requestedUserType}</span>
+                  </div>
+                )}
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <button
+                    onClick={() => handleQuickTypeRequest('STUDENT')}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+                  >
+                    Request Student Access
+                  </button>
+                  <button
+                    onClick={() => handleQuickTypeRequest('LECTURER')}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
+                  >
+                    Request Lecturer Access
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+          </div>
+        )}
+
+        {/* Admin Section */}
+        {user?.role === 'ADMIN' && (
+          <div className="xl:col-span-2">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                  Admin Controls
+                </p>
+                <h3 className="mt-1 text-xl font-semibold text-slate-900">User Management</h3>
+                <p className="text-sm text-slate-600">
+                  Approve student/lecturer requests and create managed admin or technician accounts.
                 </p>
               </div>
               {adminLoading && (
@@ -569,7 +553,7 @@ function DashboardPage() {
 
             <form
               onSubmit={handleCreateManagedUser}
-              className="mt-6 grid gap-4 rounded-[26px] bg-slate-50 p-5 md:grid-cols-5"
+              className="mt-6 grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
             >
               <input
                 type="text"
@@ -606,28 +590,26 @@ function DashboardPage() {
                 placeholder="Department (optional)"
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
               />
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <select
-                  name="role"
-                  value={managedUserForm.role}
-                  onChange={handleManagedUserChange}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-                >
-                  <option value="TECHNICIAN">Technician</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
-                >
-                  Create
-                </button>
-              </div>
+              <select
+                name="role"
+                value={managedUserForm.role}
+                onChange={handleManagedUserChange}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+              >
+                <option value="TECHNICIAN">Technician</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+              <button
+                type="submit"
+                className="rounded-2xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-500"
+              >
+                Create
+              </button>
             </form>
 
-            <div className="mt-8 overflow-x-auto rounded-[26px] border border-slate-200">
-              <div className="min-w-[1180px]">
-                <div className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.4fr] gap-4 bg-slate-50 px-5 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            <div className="mt-8 overflow-x-auto rounded-2xl border border-slate-200">
+              <div className="min-w-[800px] lg:min-w-[1000px] xl:min-w-[1180px]">
+                <div className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr_1.2fr] gap-3 sm:gap-4 bg-slate-50 px-4 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                   <span>User</span>
                   <span>Details</span>
                   <span>Role</span>
@@ -640,7 +622,7 @@ function DashboardPage() {
                   {users.map((entry) => (
                     <div
                       key={entry.id}
-                      className="grid grid-cols-[1.15fr_1fr_0.75fr_0.75fr_1fr_1.4fr] gap-4 px-5 py-5 text-sm text-slate-600"
+                      className="grid grid-cols-[1.2fr_1fr_0.8fr_0.8fr_1fr_1.2fr] gap-3 sm:gap-4 px-4 py-4 text-sm text-slate-600"
                     >
                       <div>
                         <p className="font-semibold text-slate-900">
@@ -693,7 +675,7 @@ function DashboardPage() {
                                 entry.requestedUserType
                               )
                             }
-                            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
                           >
                             Approve {entry.requestedUserType}
                           </button>
@@ -707,7 +689,7 @@ function DashboardPage() {
                               onClick={() =>
                                 handleApprovalUpdate(entry.id, 'APPROVED')
                               }
-                              className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                              className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50"
                             >
                               Approve
                             </button>
@@ -722,7 +704,7 @@ function DashboardPage() {
 
                         <button
                           onClick={() => handleStatusToggle(entry.id, entry.isActive)}
-                          className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                          className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-500"
                         >
                           {entry.isActive ? 'Deactivate' : 'Activate'}
                         </button>
@@ -733,9 +715,10 @@ function DashboardPage() {
               </div>
             </div>
           </section>
+          </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }
 

@@ -100,112 +100,119 @@ function RegisterPage() {
       sideTitle="Create a trusted smart campus identity."
       sideText="Register once, then move between local sign-in, Google access, protected dashboards, and role-based campus services."
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="name" className="mb-2 block text-sm font-semibold text-slate-700">
             Full Name
           </label>
           <input
+            id="name"
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Enter your full name"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+            placeholder="John Doe"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
             required
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">
+            Email Address
           </label>
           <input
+            id="email"
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+            placeholder="name@university.edu"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
             required
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="phoneNumber" className="mb-2 block text-sm font-semibold text-slate-700">
               Phone Number
             </label>
             <input
+              id="phoneNumber"
               type="text"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              placeholder="Optional"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+              placeholder="+1 (555) 000-0000"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="department" className="mb-2 block text-sm font-semibold text-slate-700">
               Department
             </label>
             <input
+              id="department"
               type="text"
               name="department"
               value={formData.department}
               onChange={handleChange}
-              placeholder="Optional"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+              placeholder="Computer Science"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
             />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">
               Password
             </label>
             <input
+              id="password"
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Password"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+              placeholder="Min. 8 characters"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
               required
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-slate-700">
               Confirm Password
             </label>
             <input
+              id="confirmPassword"
               type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Confirm password"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
               required
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Account Option
+          <label htmlFor="registrationType" className="mb-2 block text-sm font-semibold text-slate-700">
+            Account Type
           </label>
           <select
+            id="registrationType"
             name="registrationType"
             value={formData.registrationType}
             onChange={handleChange}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-slate-900 outline-none transition focus:border-[#0f6e73] focus:bg-white focus:ring-4 focus:ring-teal-100"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
           >
             <option value="STUDENT">Student</option>
             <option value="LECTURER">Lecturer</option>
           </select>
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            Student and lecturer accounts need admin approval. Common access is available through Google sign-in, and admin or technician accounts are created directly by an administrator.
+            Student and lecturer accounts require admin approval. Common access is available through Google sign-in.
           </p>
         </div>
 
@@ -218,35 +225,37 @@ function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-2xl bg-[linear-gradient(135deg,#0b5e63,#113d41)] py-3.5 font-semibold text-white shadow-[0_18px_35px_rgba(15,94,99,0.28)] transition hover:brightness-105 disabled:opacity-60"
+          className="w-full rounded-xl bg-teal-600 py-3.5 font-semibold text-white shadow-lg transition hover:bg-teal-500 disabled:opacity-60"
         >
-          {loading ? 'Creating account...' : 'Register'}
+          {loading ? 'Creating account...' : 'Create Account'}
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-8 flex items-center gap-3">
         <div className="h-px flex-1 bg-slate-200"></div>
         <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-          Or continue
+          Or continue with
         </span>
         <div className="h-px flex-1 bg-slate-200"></div>
       </div>
 
       <button
         onClick={handleGoogleLogin}
-        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 transition hover:bg-slate-50"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-3.5 font-semibold text-slate-700 shadow-sm transition hover:border-teal-300 hover:bg-teal-50"
       >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-sm font-bold">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-teal-100 text-sm font-bold text-teal-600">
           G
         </span>
         Continue with Google
       </button>
 
-      <div className="mt-6 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500">
-        Already have an account?{' '}
-        <Link to="/" className="font-semibold text-slate-900">
-          Sign in here
-        </Link>
+      <div className="mt-8 text-center">
+        <p className="text-sm text-slate-600">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-700 transition-colors">
+            Sign in
+          </Link>
+        </p>
       </div>
     </AuthLayout>
   )
