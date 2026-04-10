@@ -106,6 +106,7 @@ function AdminSidebar() {
       icon: 'calendar',
       badge: pendingBookingCount,
     },
+    { label: 'Ticket management', path: '/admin/tickets', icon: 'check' },
     { label: 'Admins', path: '/users/admins', icon: 'list' },
     { label: 'Students', path: '/users/students', icon: 'list', badge: pendingStudentCount },
     { label: 'Lecturers', path: '/users/lecturers', icon: 'list' },
