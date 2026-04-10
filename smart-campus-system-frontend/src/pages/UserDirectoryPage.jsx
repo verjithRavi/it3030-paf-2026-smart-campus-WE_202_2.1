@@ -6,7 +6,7 @@ import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
 import PageHeader from '../components/ui/PageHeader';
 import Spinner from '../components/ui/Spinner';
-import { deleteUser, getAllUsers, updateApprovalStatus, updateUserRole, updateUserStatus } from '../api/authApi';
+import { deleteUser, getAllUsers, updateApprovalStatus, updateUserRole } from '../api/authApi';
 import {
   getDirectoryCache,
   removeCachedUser,
@@ -40,12 +40,6 @@ function UserDirectoryPage() {
     technicians: null,
   }[category];
 
-  const categoryRole = {
-    admins: 'ADMIN',
-    students: 'USER',
-    lecturers: 'USER',
-    technicians: 'TECHNICIAN',
-  }[category];
   const isAdminDirectory = category === 'admins';
   const directoryGridClass = isAdminDirectory
     ? 'grid-cols-[minmax(120px,0.95fr)_minmax(220px,2fr)_minmax(140px,1fr)_minmax(120px,0.85fr)_minmax(110px,0.8fr)_minmax(260px,1.25fr)]'
@@ -150,23 +144,6 @@ function UserDirectoryPage() {
         (u.phoneNumber || '').toLowerCase().includes(q)
     );
   }, [search, users, pendingUsers, activeTab]);
-
-  const handleToggleStatus = async (user) => {
-    try {
-      setNotice('');
-      const updatedUser = await updateUserStatus(user.id, {
-        isActive: !user.isActive,
-      });
-      replaceCachedUser(updatedUser);
-      setUsers((prev) =>
-        prev.map((entry) =>
-          entry.id === updatedUser.id ? { ...entry, ...updatedUser } : entry
-        )
-      );
-    } catch {
-      setError('Unable to update account status right now.');
-    }
-  };
 
   const handleDeleteUser = async (user) => {
     const confirmed = window.confirm(

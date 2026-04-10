@@ -60,7 +60,6 @@ const typeLabel = {
 
 function NotificationsPage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
@@ -101,8 +100,7 @@ function NotificationsPage() {
     setLoading(true);
     setError('');
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+      await getCurrentUser();
       const res = await getNotifications();
       setNotifications(res.data);
     } catch {
