@@ -96,13 +96,7 @@ export default function NewBookingPage() {
           {successMessage}
         </div>
       )}
-      {errorMessage && (
-        <div className="mb-4 rounded-2xl border border-[#E24B4A] bg-[#FCEBEB] p-4 text-sm text-[#A32D2D]">
-          {errorMessage}
-        </div>
-      )}
-
-      <BookingForm onSubmit={handleCreateBooking} loading={loading} />
+      <BookingForm onSubmit={handleCreateBooking} loading={loading} submitError={errorMessage} />
       </>)}
     </div>
   )
