@@ -112,8 +112,9 @@ export const bookingApi = {
     return response.data;
   },
 
-  cancelBooking: async (bookingId) => {
-    const response = await API.patch(`/bookings/${bookingId}/cancel`, null, {
+  cancelBooking: async (bookingId, reason = null) => {
+    const body = reason ? { reason } : null
+    const response = await API.patch(`/bookings/${bookingId}/cancel`, body, {
       headers: getHeaders(),
     });
     return response.data;

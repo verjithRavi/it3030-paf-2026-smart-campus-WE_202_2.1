@@ -48,6 +48,7 @@ public class Booking {
 
     private BookingStatus status;
     private String adminReason;
+    private String cancelReason;
 
     @Builder.Default
     private Boolean deleted = false;

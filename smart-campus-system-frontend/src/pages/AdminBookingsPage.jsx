@@ -5,6 +5,7 @@ import { getCurrentUser } from '../api/authApi'
 
 import BookingTable from '../components/BookingTable'
 import RejectModal from '../components/RejectModal'
+import CancelModal from '../components/CancelModal'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
 import StatCard from '../components/ui/StatCard'
@@ -26,6 +27,8 @@ export default function AdminBookingsPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [rejectModal, setRejectModal] = useState({ open: false, bookingId: null })
   const [rejectLoading, setRejectLoading] = useState(false)
+  const [cancelModal, setCancelModal] = useState({ open: false, bookingId: null })
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const loadBookings = useCallback(async (activeFilters = filters) => {
     try {
@@ -123,18 +126,23 @@ export default function AdminBookingsPage() {
     }
   }
 
-  const handleCancel = async (bookingId) => {
-    const confirmed = window.confirm('Are you sure you want to cancel this approved booking? This cannot be undone.')
-    if (!confirmed) return
+  const handleCancel = (bookingId) => {
+    setCancelModal({ open: true, bookingId })
+  }
 
+  const handleCancelConfirm = async (reason) => {
     try {
+      setCancelLoading(true)
       setMessage('')
       setErrorMessage('')
-      await bookingApi.cancelBooking(bookingId)
+      await bookingApi.cancelBooking(cancelModal.bookingId, reason || null)
+      setCancelModal({ open: false, bookingId: null })
       setMessage('Booking cancelled successfully.')
       loadBookings(filters)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
+    } finally {
+      setCancelLoading(false)
     }
   }
 
@@ -143,7 +151,7 @@ export default function AdminBookingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+    <div className="mx-auto w-full max-w-330 px-6 py-6">
       {pageLoading ? (
         <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
       ) : (<>
@@ -239,6 +247,12 @@ export default function AdminBookingsPage() {
         onClose={() => setRejectModal({ open: false, bookingId: null })}
         onConfirm={handleRejectConfirm}
         loading={rejectLoading}
+      />
+      <CancelModal
+        open={cancelModal.open}
+        onClose={() => setCancelModal({ open: false, bookingId: null })}
+        onConfirm={handleCancelConfirm}
+        loading={cancelLoading}
       />
     </div>
   )
