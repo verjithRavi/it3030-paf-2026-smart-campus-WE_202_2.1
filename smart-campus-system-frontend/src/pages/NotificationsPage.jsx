@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../api/authApi';
-import AppShell from '../components/AppShell';
+
 import EmptyState from '../components/ui/EmptyState';
 import PageHeader from '../components/ui/PageHeader';
 import Spinner from '../components/ui/Spinner';
@@ -145,16 +145,11 @@ function NotificationsPage() {
 
   const filteredNotifications = notifications.filter(tabMap[activeTab]);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   return (
-    <AppShell user={user} contentClassName="w-full max-w-[1100px] px-6 py-6">
+    <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
         <PageHeader
           title="Notifications"
           subtitle="Stay updated on approvals, tickets, and comments."
@@ -224,7 +219,8 @@ function NotificationsPage() {
             ))
           )}
         </div>
-    </AppShell>
+      </>)}
+    </div>
   );
 }
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { bookingApi } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
-import AppShell from '../components/AppShell'
 import Badge from '../components/ui/Badge'
 import EmptyState from '../components/ui/EmptyState'
 import Spinner from '../components/ui/Spinner'
@@ -52,20 +51,15 @@ function HomePage() {
     loadHome()
   }, [])
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
   if (user?.role === 'ADMIN') {
     return <Navigate to="/dashboard" replace />
   }
 
   return (
-    <AppShell user={user}>
+    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
       {error && (
         <div className="mb-5 rounded-2xl border border-[#E24B4A] bg-[#FCEBEB] p-4 text-sm text-[#A32D2D]">
           {error}
@@ -97,7 +91,7 @@ function HomePage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/home')}
                 className="rounded-full border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
               >
                 Open dashboard
@@ -158,7 +152,7 @@ function HomePage() {
         <QuickAction
           title="Go to dashboard"
           copy="Open your main workspace for notifications, account status, and campus updates."
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/home')}
           accent="from-[#FFF7E8] via-[#FFFDF7] to-[#FFFFFF]"
           cta="Open dashboard"
         />
@@ -221,7 +215,8 @@ function HomePage() {
           )}
         </div>
       </section>
-    </AppShell>
+      </>)}
+    </div>
   )
 }
 

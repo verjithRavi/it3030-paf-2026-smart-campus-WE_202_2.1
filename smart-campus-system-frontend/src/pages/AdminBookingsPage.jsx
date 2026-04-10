@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { bookingApi, getErrorMessage } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
-import AppShell from '../components/AppShell'
+
 import BookingTable from '../components/BookingTable'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
@@ -23,7 +23,7 @@ export default function AdminBookingsPage() {
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
-  const loadBookings = async (activeFilters = filters) => {
+  const loadBookings = useCallback(async (activeFilters = filters) => {
     try {
       setLoading(true)
       setErrorMessage('')
@@ -34,7 +34,7 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
 
   useEffect(() => {
     const loadPage = async () => {
@@ -53,7 +53,7 @@ export default function AdminBookingsPage() {
     }
 
     loadPage()
-  }, [])
+  }, [loadBookings])
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -126,20 +126,15 @@ export default function AdminBookingsPage() {
     }
   }
 
-  if (pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
-  if (user?.role !== 'ADMIN') {
+  if (!pageLoading && user?.role !== 'ADMIN') {
     return <Navigate to="/home" replace />
   }
 
   return (
-    <AppShell user={user}>
+    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+      {pageLoading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
       <PageHeader
         title="Admin booking management"
         subtitle="Review, filter, approve, reject, cancel, and delete booking requests."
@@ -164,7 +159,7 @@ export default function AdminBookingsPage() {
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">User ID</label>
-          <input type="text" name="userId" value={filters.userId} onChange={handleFilterChange} placeholder="e.g. user001" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
+          <input type="text" name="userId" value={filters.userId} onChange={handleFilterChange} placeholder="e.g. S0001" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -199,6 +194,7 @@ export default function AdminBookingsPage() {
           onDelete={handleDelete}
         />
       )}
-    </AppShell>
+      </>)}
+    </div>
   )
 }

@@ -66,6 +66,11 @@ export const createManagedUser = async (data) => {
   return response.data
 }
 
+export const updateManagedUser = async (userId, data) => {
+  const response = await axiosInstance.patch(`/auth/users/${userId}`, data)
+  return response.data
+}
+
 export const updateUserRole = async (userId, data) => {
   const response = await axiosInstance.patch(`/auth/users/${userId}/role`, data)
   return response.data

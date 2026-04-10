@@ -5,6 +5,7 @@ import com.smcsystem.smart_campus_system.dto.request.LoginRequest;
 import com.smcsystem.smart_campus_system.dto.request.RegisterRequest;
 import com.smcsystem.smart_campus_system.dto.request.SubmitAccessRequestRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateApprovalStatusRequest;
+import com.smcsystem.smart_campus_system.dto.request.UpdateManagedUserRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateProfileRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserRoleRequest;
 import com.smcsystem.smart_campus_system.dto.request.UpdateUserStatusRequest;
@@ -59,7 +60,7 @@ public class AuthController {
     }
 
     @PatchMapping("/profile")
-    public ResponseEntity<AuthResponse> updateCurrentUserProfile(@RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<AuthResponse> updateCurrentUserProfile(@Valid @RequestBody UpdateProfileRequest request) {
         AuthResponse response = authService.updateCurrentUserProfile(request);
         return ResponseEntity.ok(response);
     }
@@ -76,6 +77,16 @@ public class AuthController {
     public ResponseEntity<UserResponse> createManagedUser(@Valid @RequestBody CreateManagedUserRequest request) {
         UserResponse response = authService.createManagedUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PatchMapping("/users/{userId}")
+    public ResponseEntity<UserResponse> updateManagedUser(
+            @PathVariable String userId,
+            @RequestBody UpdateManagedUserRequest request
+    ) {
+        UserResponse response = authService.updateManagedUser(userId, request);
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import AppShell from '../components/AppShell';
+
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
@@ -136,16 +136,11 @@ function PendingApprovalsPage() {
     return 'green';
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   return (
-    <AppShell user={{ role: 'ADMIN' }} contentClassName="w-full max-w-[1200px] px-6 py-6">
+    <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
           <PageHeader
             title="Pending approvals"
             subtitle="Review and manage user access requests."
@@ -265,7 +260,8 @@ function PendingApprovalsPage() {
               ))
             )}
           </div>
-    </AppShell>
+      </>)}
+    </div>
   );
 }
 

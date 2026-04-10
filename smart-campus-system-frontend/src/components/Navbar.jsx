@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../api/authApi';
 import NotificationBell from './NotificationBell';
 import Avatar from './ui/Avatar';
 import Badge from './ui/Badge';
 import { getCurrentUserData, removeToken, setCurrentUserData } from '../utils/token';
 
+const studentNavItems = [
+  { label: 'Home', path: '/home' },
+  { label: 'New Booking', path: '/bookings/new' },
+  { label: 'My Bookings', path: '/bookings/my' },
+  { label: 'Notifications', path: '/notifications' },
+  { label: 'Profile', path: '/profile' },
+];
+
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dropdownRef = useRef(null);
   const [user, setUser] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -47,19 +56,43 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white">
-      <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between px-6 py-3">
+      <div className="flex w-full items-center justify-between px-6 py-3">
         <button
           type="button"
-          onClick={() => navigate('/home')}
-          className="flex items-center gap-2 transition hover:opacity-80"
+          onClick={() => navigate(isAdmin ? '/dashboard' : '/home')}
+          className="flex shrink-0 items-center gap-2 transition hover:opacity-80"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0F6E56]">
             <div className="h-3 w-3 rounded-sm bg-white" />
           </div>
           <span className="text-sm font-medium text-gray-900">Smart Campus</span>
         </button>
+
+        {!isAdmin && !loading && (
+          <div className="hidden items-center gap-1 md:flex">
+            {studentNavItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => navigate(item.path)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-[#E7F7F0] text-[#0F6E56]'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <NotificationBell />
@@ -69,9 +102,13 @@ function Navbar() {
               onClick={() => setProfileOpen((o) => !o)}
               className="flex items-center gap-2 transition hover:opacity-80"
             >
-              <Avatar name={user?.name || ''} size="sm" />
+              <Avatar
+                name={user?.name || ''}
+                size="sm"
+                imageUrl={user?.pictureUrl || ''}
+              />
               <span className="hidden text-xs text-gray-600 sm:block">
-                {loading ? 'Loading...' : user?.name}
+                {loading ? 'Loading...' : user?.userId || 'No ID'}
               </span>
             </button>
 
@@ -79,10 +116,14 @@ function Navbar() {
               <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-200 bg-white p-1 shadow-xl">
               <div className="border-b border-gray-100 px-3 py-3">
                 <div className="flex items-start gap-3">
-                  <Avatar name={user?.name || ''} size="md" />
+                  <Avatar
+                    name={user?.name || ''}
+                    size="md"
+                    imageUrl={user?.pictureUrl || ''}
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-gray-900">
-                      {user?.name || 'Campus User'}
+                      {user?.userId || 'Campus User'}
                     </p>
                     <p className="truncate text-xs text-gray-400">
                       {user?.email || 'No email'}
@@ -100,7 +141,7 @@ function Navbar() {
               <button
                 onClick={() => {
                   setProfileOpen(false);
-                  navigate(user?.role === 'ADMIN' ? '/dashboard' : '/home');
+                  navigate(isAdmin ? '/dashboard' : '/home');
                 }}
                 className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
               >
@@ -112,7 +153,7 @@ function Navbar() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>{user?.role === 'ADMIN' ? 'Dashboard' : 'Home'}</span>
+                <span>{isAdmin ? 'Dashboard' : 'Home'}</span>
               </button>
 
               <button
