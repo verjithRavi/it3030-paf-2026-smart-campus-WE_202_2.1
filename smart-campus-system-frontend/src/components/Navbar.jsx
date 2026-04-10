@@ -10,6 +10,14 @@ const studentNavItems = [
   { label: 'Home', path: '/home' },
   { label: 'New Booking', path: '/bookings/new' },
   { label: 'My Bookings', path: '/bookings/my' },
+  { label: 'My Tickets', path: '/tickets/my' },
+  { label: 'Notifications', path: '/notifications' },
+  { label: 'Profile', path: '/profile' },
+];
+
+const technicianNavItems = [
+  { label: 'Home', path: '/home' },
+  { label: 'Assigned Tickets', path: '/technician/tickets' },
   { label: 'Notifications', path: '/notifications' },
   { label: 'Profile', path: '/profile' },
 ];
@@ -57,6 +65,8 @@ function Navbar() {
   }, []);
 
   const isAdmin = user?.role === 'ADMIN';
+  const isTechnician = user?.role === 'TECHNICIAN';
+  const activeNavItems = isTechnician ? technicianNavItems : studentNavItems;
 
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white">
@@ -74,7 +84,7 @@ function Navbar() {
 
         {!isAdmin && !loading && (
           <div className="hidden items-center gap-1 md:flex">
-            {studentNavItems.map((item) => {
+            {activeNavItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <button
@@ -181,6 +191,50 @@ function Navbar() {
                 </svg>
                 <span>My bookings</span>
               </button>
+
+              {!isAdmin && isTechnician && (
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    navigate('/technician/tickets');
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 6h12M4 10h8M4 14h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                  <span>Assigned tickets</span>
+                </button>
+              )}
+
+              {!isAdmin && !isTechnician && (
+                <>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate('/tickets/create');
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <span>Create ticket</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate('/tickets/my');
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 6h12M4 10h8M4 14h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                    <span>My tickets</span>
+                  </button>
+                </>
+              )}
 
               <button
                 onClick={() => {
