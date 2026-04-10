@@ -86,17 +86,22 @@ export default function MyBookingsPage() {
         }
       />
 
-      <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <StatCard label="Total" value={bookings.length} sub="Booking requests" />
+      <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Total" value={bookings.length} sub="All requests" />
         <StatCard
           label="Pending"
-          value={bookings.filter((booking) => booking.status === 'PENDING').length}
+          value={bookings.filter((b) => b.status === 'PENDING').length}
           sub="Awaiting review"
         />
         <StatCard
           label="Approved"
-          value={bookings.filter((booking) => booking.status === 'APPROVED').length}
+          value={bookings.filter((b) => b.status === 'APPROVED').length}
           sub="Confirmed bookings"
+        />
+        <StatCard
+          label="Rejected"
+          value={bookings.filter((b) => b.status === 'REJECTED').length}
+          sub="Declined requests"
         />
       </div>
 

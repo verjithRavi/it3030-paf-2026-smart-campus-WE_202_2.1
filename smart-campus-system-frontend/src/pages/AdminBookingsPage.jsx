@@ -85,14 +85,14 @@ export default function AdminBookingsPage() {
   }
 
   const handleReject = async (bookingId) => {
-    const reason = window.prompt('Enter rejection reason:')
-    if (!reason) return
+    const reason = window.prompt('Please enter a reason for rejecting this booking (required):')
+    if (!reason || !reason.trim()) return
 
     try {
       setMessage('')
       setErrorMessage('')
-      await bookingApi.rejectBooking(bookingId, reason)
-      setMessage('Booking rejected successfully.')
+      await bookingApi.rejectBooking(bookingId, reason.trim())
+      setMessage('Booking rejected.')
       loadBookings(filters)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
@@ -115,6 +115,9 @@ export default function AdminBookingsPage() {
   }
 
   const handleCancel = async (bookingId) => {
+    const confirmed = window.confirm('Are you sure you want to cancel this approved booking? This cannot be undone.')
+    if (!confirmed) return
+
     try {
       setMessage('')
       setErrorMessage('')
