@@ -66,7 +66,7 @@ export default function NewBookingPage() {
       />
 
       <div className="mb-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-[26px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           <p className="text-xs uppercase tracking-[0.24em] text-[#1D9E75]">Booking guide</p>
           <p className="mt-3 text-lg font-medium text-gray-900">Tell us what you need</p>
           <p className="mt-2 text-sm leading-6 text-gray-600">
@@ -74,12 +74,12 @@ export default function NewBookingPage() {
             pending status until reviewed.
           </p>
         </div>
-        <div className="rounded-[26px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           <p className="text-xs uppercase tracking-[0.24em] text-[#1D9E75]">Signed in as</p>
           <p className="mt-3 text-lg font-medium text-gray-900">{user?.name}</p>
           <p className="mt-2 text-sm text-gray-600">{user?.email}</p>
         </div>
-        <div className="rounded-[26px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)]">
           <p className="text-xs uppercase tracking-[0.24em] text-[#1D9E75]">Quick jump</p>
           <button
             type="button"

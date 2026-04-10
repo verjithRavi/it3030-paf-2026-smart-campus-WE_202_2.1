@@ -156,6 +156,16 @@ public class BookingService {
         bookingRepository.save(booking);
     }
 
+    public Booking getBookingById(String bookingId, String userId, String role) {
+        Booking booking = getBookingOrThrow(bookingId);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(role);
+        boolean isOwner = booking.getUserId().equals(userId);
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("You are not allowed to view this booking");
+        }
+        return booking;
+    }
+
     private Booking getBookingOrThrow(String bookingId) {
         return bookingRepository.findByIdAndDeletedFalse(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));

@@ -67,6 +67,13 @@ export function getErrorMessage(error) {
 }
 
 export const bookingApi = {
+  getBookingById: async (bookingId) => {
+    const response = await API.get(`/bookings/${bookingId}`, {
+      headers: getHeaders(),
+    });
+    return response.data;
+  },
+
   createBooking: async (bookingData) => {
     const response = await API.post("/bookings", bookingData, {
       headers: getHeaders(),

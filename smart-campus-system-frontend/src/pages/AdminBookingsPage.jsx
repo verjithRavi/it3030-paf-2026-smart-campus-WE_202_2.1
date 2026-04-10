@@ -4,6 +4,7 @@ import { bookingApi, getErrorMessage } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
 
 import BookingTable from '../components/BookingTable'
+import RejectModal from '../components/RejectModal'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
 
@@ -22,6 +23,8 @@ export default function AdminBookingsPage() {
   const [pageLoading, setPageLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [rejectModal, setRejectModal] = useState({ open: false, bookingId: null })
+  const [rejectLoading, setRejectLoading] = useState(false)
 
   const loadBookings = useCallback(async (activeFilters = filters) => {
     try {
@@ -84,18 +87,23 @@ export default function AdminBookingsPage() {
     }
   }
 
-  const handleReject = async (bookingId) => {
-    const reason = window.prompt('Please enter a reason for rejecting this booking (required):')
-    if (!reason || !reason.trim()) return
+  const handleReject = (bookingId) => {
+    setRejectModal({ open: true, bookingId })
+  }
 
+  const handleRejectConfirm = async (reason) => {
     try {
+      setRejectLoading(true)
       setMessage('')
       setErrorMessage('')
-      await bookingApi.rejectBooking(bookingId, reason.trim())
+      await bookingApi.rejectBooking(rejectModal.bookingId, reason)
+      setRejectModal({ open: false, bookingId: null })
       setMessage('Booking rejected.')
       loadBookings(filters)
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
+    } finally {
+      setRejectLoading(false)
     }
   }
 
@@ -146,7 +154,7 @@ export default function AdminBookingsPage() {
       <section className="mb-5 grid gap-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)] md:grid-cols-2 xl:grid-cols-5">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">Status</label>
-          <select name="status" value={filters.status} onChange={handleFilterChange} className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]">
+          <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]">
             <option value="">All</option>
             <option value="PENDING">PENDING</option>
             <option value="APPROVED">APPROVED</option>
@@ -157,17 +165,17 @@ export default function AdminBookingsPage() {
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">Resource ID</label>
-          <input type="text" name="resourceId" value={filters.resourceId} onChange={handleFilterChange} placeholder="e.g. lab101" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
+          <input type="text" name="resourceId" value={filters.resourceId} onChange={handleFilterChange} placeholder="e.g. lab101" className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">User ID</label>
-          <input type="text" name="userId" value={filters.userId} onChange={handleFilterChange} placeholder="e.g. S0001" className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
+          <input type="text" name="userId" value={filters.userId} onChange={handleFilterChange} placeholder="e.g. S0001" className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700">Date</label>
-          <input type="date" name="date" value={filters.date} onChange={handleFilterChange} className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
+          <input type="date" name="date" value={filters.date} onChange={handleFilterChange} className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#1D9E75]" />
         </div>
 
         <div className="flex items-end gap-3">
@@ -198,6 +206,13 @@ export default function AdminBookingsPage() {
         />
       )}
       </>)}
+
+      <RejectModal
+        open={rejectModal.open}
+        onClose={() => setRejectModal({ open: false, bookingId: null })}
+        onConfirm={handleRejectConfirm}
+        loading={rejectLoading}
+      />
     </div>
   )
 }

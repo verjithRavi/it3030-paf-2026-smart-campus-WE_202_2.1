@@ -15,6 +15,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import NewBookingPage from '../pages/NewBookingPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
 import AdminBookingsPage from '../pages/AdminBookingsPage';
+import BookingDetailsPage from '../pages/BookingDetailsPage';
 import CreateTicketPage from '../pages/CreateTicketPage';
 import MyTicketsPage from '../pages/MyTicketsPage';
 import TicketDetailsPage from '../pages/TicketDetailsPage';
@@ -49,6 +50,7 @@ function AppRouter() {
             <Route path="/users/:category/:userId" element={<DirectoryUserDetailsPage />} />
             <Route path="/bookings/new" element={<NewBookingPage />} />
             <Route path="/bookings/my" element={<MyBookingsPage />} />
+            <Route path="/bookings/:id" element={<BookingDetailsPage />} />
             <Route path="/admin/bookings" element={<AdminBookingsPage />} />
             <Route path="/tickets/create" element={<CreateTicketPage />} />
             <Route path="/tickets/my" element={<MyTicketsPage />} />
