@@ -10,7 +10,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +22,10 @@ function LoginPage() {
     if (params.get('registered') === 'true') {
       setSuccessMessage('Account created successfully. Awaiting admin approval.');
     }
+
+    if (params.get('error') === 'google_student_only') {
+      setError('Google sign-in is available only for student accounts.');
+    }
   }, [location.search]);
 
   const handleLogin = async (e) => {
@@ -30,8 +34,10 @@ function LoginPage() {
     setError('');
 
     try {
+      const normalizedIdentifier = identifier.trim();
       const data = await loginUser({
-        email: email.trim(),
+        identifier: normalizedIdentifier,
+        email: normalizedIdentifier,
         password,
       });
       setAuthSession(data);
@@ -78,7 +84,7 @@ function LoginPage() {
       )}
 
       <h1 className="text-xl font-medium text-gray-900">Sign in</h1>
-      <p className="mb-6 text-sm text-gray-400">Welcome back to Smart Campus</p>
+      <p className="mb-6 text-sm text-gray-400">Sign in with your email address or user ID</p>
 
       <button
         type="button"
@@ -116,10 +122,10 @@ function LoginPage() {
 
       <form onSubmit={handleLogin} className="space-y-4">
         <input
-          type="email"
-          placeholder="Email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Email address or user ID"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
           className={INPUT_CLASS}
           required
         />

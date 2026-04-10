@@ -1,4 +1,9 @@
-export default function Avatar({ name = '', size = 'md', color = 'green' }) {
+export default function Avatar({
+  name = '',
+  size = 'md',
+  color = 'green',
+  imageUrl = '',
+}) {
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -21,9 +26,17 @@ export default function Avatar({ name = '', size = 'md', color = 'green' }) {
 
   return (
     <div
-      className={`rounded-full flex items-center justify-center font-medium flex-shrink-0 ${sizes[size]} ${colors[color]}`}
+      className={`rounded-full flex items-center justify-center overflow-hidden font-medium flex-shrink-0 ${sizes[size]} ${colors[color]}`}
     >
-      {initials || '?'}
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={name || 'Profile'}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initials || '?'
+      )}
     </div>
   );
 }

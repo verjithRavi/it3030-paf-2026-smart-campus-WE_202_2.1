@@ -72,7 +72,7 @@ function Icon({ type }) {
 function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [pendingCount, setPendingCount] = useState(0);
+  const [pendingStudentCount, setPendingStudentCount] = useState(0);
   const [pendingBookingCount, setPendingBookingCount] = useState(0);
 
   useEffect(() => {
@@ -82,13 +82,15 @@ function AdminSidebar() {
           getAllUsers(),
           bookingApi.getAllBookings({ status: 'PENDING' }),
         ]);
-        const count = users.filter(
-          (user) => user.approvalStatus === 'PENDING'
+        const studentCount = users.filter(
+          (user) =>
+            user.approvalStatus === 'PENDING' &&
+            (user.userType === 'STUDENT' || user.requestedUserType === 'STUDENT')
         ).length;
-        setPendingCount(count);
+        setPendingStudentCount(studentCount);
         setPendingBookingCount(bookings.length);
       } catch {
-        setPendingCount(0);
+        setPendingStudentCount(0);
         setPendingBookingCount(0);
       }
     };
@@ -99,24 +101,19 @@ function AdminSidebar() {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: 'grid' },
     {
-      label: 'Pending approvals',
-      path: '/pending-approvals',
-      icon: 'check',
-      badge: pendingCount,
-    },
-    {
       label: 'Booking approvals',
       path: '/admin/bookings',
       icon: 'calendar',
       badge: pendingBookingCount,
     },
-    { label: 'Students', path: '/users/students', icon: 'list' },
+    { label: 'Admins', path: '/users/admins', icon: 'list' },
+    { label: 'Students', path: '/users/students', icon: 'list', badge: pendingStudentCount },
     { label: 'Lecturers', path: '/users/lecturers', icon: 'list' },
     { label: 'Technicians', path: '/users/technicians', icon: 'list' },
   ];
 
   return (
-    <aside className="glass-panel sticky top-0 flex min-h-screen w-60 flex-col border-r border-white/60 bg-white/70 px-3 py-5">
+    <aside className="glass-panel flex h-screen w-60 shrink-0 flex-col border-r border-white/60 bg-white/70 px-3 py-5 overflow-y-auto">
       <div className="mb-5 px-3">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#0F6E56]">
           Admin console

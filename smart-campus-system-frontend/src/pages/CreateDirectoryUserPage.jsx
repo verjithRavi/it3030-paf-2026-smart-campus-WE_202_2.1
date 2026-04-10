@@ -1,12 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import AppShell from '../components/AppShell'
+
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
 import { createManagedUser, getCurrentUser, registerUser } from '../api/authApi'
 import { removeToken } from '../utils/token'
+import { upsertCachedUser } from '../utils/directoryCache'
+
+const FACULTY_OPTIONS = [
+  'Faculty of Computing',
+  'Faculty of Business',
+  'Faculty of Engineering',
+  'Faculty of Humanities & Sciences',
+  'Faculty of Architecture',
+  'Faculty of Hospitality & Culinary',
+]
 
 const createConfig = {
+  admins: {
+    title: 'Create Admin',
+    activeKey: 'admins',
+    submitLabel: 'Create Admin',
+    createMode: 'managed',
+    payload: { role: 'ADMIN' },
+  },
   students: {
     title: 'Create Student',
     activeKey: 'students',
@@ -18,8 +35,8 @@ const createConfig = {
     title: 'Create Lecturer',
     activeKey: 'lecturers',
     submitLabel: 'Create Lecturer',
-    createMode: 'register',
-    payload: { registrationType: 'LECTURER' },
+    createMode: 'managed',
+    payload: { role: 'USER', userType: 'LECTURER' },
   },
   technicians: {
     title: 'Create Technician',
@@ -48,6 +65,9 @@ function CreateDirectoryUserPage() {
   const [formError, setFormError] = useState('')
   const [formNotice, setFormNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const isStudentForm = category === 'students'
+  const isLecturerForm = category === 'lecturers'
+  const isAdminForm = category === 'admins'
 
   useEffect(() => {
     if (!config) {
@@ -109,37 +129,85 @@ function CreateDirectoryUserPage() {
     setSubmitting(true)
 
     try {
+      const normalizedPhoneNumber = formState.phoneNumber.trim()
+      const normalizedDepartment = formState.department.trim()
+
       if (formState.password !== formState.confirmPassword) {
         setFormError('Password and confirm password do not match.')
         setSubmitting(false)
         return
       }
 
+      if (!/^\d{10}$/.test(normalizedPhoneNumber)) {
+        setFormError('Phone number must contain exactly 10 digits.')
+        setSubmitting(false)
+        return
+      }
+
+      if ((isStudentForm || isLecturerForm) && !normalizedDepartment) {
+        setFormError('Department is required.')
+        setSubmitting(false)
+        return
+      }
+
       if (config.createMode === 'managed') {
-        await createManagedUser({
+        const createdUser = await createManagedUser({
           name: formState.name,
           email: formState.email,
           password: formState.password,
           role: config.payload.role,
-          phoneNumber: formState.phoneNumber || null,
-          department: formState.department || null,
+          userType: config.payload.userType || null,
+          phoneNumber: normalizedPhoneNumber,
+          department: normalizedDepartment || null,
+        })
+
+        upsertCachedUser(createdUser)
+
+        navigate(`/users/${category}`, {
+          replace: true,
+          state: {
+            notice: `${createdUser.name} was created successfully.`,
+            createdUser,
+          },
         })
       } else {
-        await registerUser({
+        const createdUser = await registerUser({
           name: formState.name,
           email: formState.email,
           password: formState.password,
           confirmPassword: formState.confirmPassword,
-          phoneNumber: formState.phoneNumber || null,
-          department: formState.department || null,
+          phoneNumber: normalizedPhoneNumber,
+          department: normalizedDepartment || null,
           registrationType: config.payload.registrationType,
         })
-      }
 
-      navigate(`/users/${category}`, {
-        replace: true,
-        state: { created: true },
-      })
+        const normalizedCreatedUser = {
+          id: createdUser.userId,
+          name: createdUser.name,
+          email: createdUser.email,
+          role: createdUser.role,
+          userType: createdUser.userType,
+          authProvider: createdUser.authProvider,
+          pictureUrl: createdUser.pictureUrl,
+          phoneNumber: createdUser.phoneNumber,
+          department: createdUser.department,
+          isActive: true,
+          emailVerified: true,
+          approvalStatus: createdUser.approvalStatus,
+          requestedRole: createdUser.requestedRole,
+          requestedUserType: createdUser.requestedUserType,
+        }
+
+        upsertCachedUser(normalizedCreatedUser)
+
+        navigate(`/users/${category}`, {
+          replace: true,
+          state: {
+            notice: `${normalizedCreatedUser.name} was created successfully.`,
+            createdUser: normalizedCreatedUser,
+          },
+        })
+      }
     } catch (err) {
       setFormError(
         err?.response?.data?.message ||
@@ -154,16 +222,11 @@ function CreateDirectoryUserPage() {
     return null
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
   return (
-    <AppShell user={user} contentClassName="w-full max-w-[1100px] px-6 py-6">
+    <div className="mx-auto w-full max-w-[1100px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
       <PageHeader
         title={config.title}
         subtitle="Add a new campus user with a consistent setup flow."
@@ -233,23 +296,46 @@ function CreateDirectoryUserPage() {
                 required
               />
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 name="phoneNumber"
                 value={formState.phoneNumber}
-                onChange={handleChange}
+                onChange={(e) =>
+                  handleChange({
+                    target: {
+                      name: 'phoneNumber',
+                      value: e.target.value.replace(/\D/g, '').slice(0, 10),
+                    },
+                  })
+                }
                 placeholder="Phone number"
                 className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                required
               />
-              <input
-                type="text"
-                name="department"
-                value={formState.department}
-                onChange={handleChange}
-                placeholder="Department"
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
-              />
+              {(isStudentForm || isLecturerForm) ? (
+                <select
+                  name="department"
+                  value={formState.department}
+                  onChange={handleChange}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                  required
+                >
+                  <option value="">Select department</option>
+                  {FACULTY_OPTIONS.map((faculty) => (
+                    <option key={faculty} value={faculty}>
+                      {faculty}
+                    </option>
+                  ))}
+                </select>
+              ) : isAdminForm ? null : null}
 
               <div className="md:col-span-2">
+                {isAdminForm && (
+                  <p className="mb-3 text-sm text-slate-500">
+                    Admin accounts are created with name, email, phone number, password, and confirm password.
+                  </p>
+                )}
                 <button
                   type="submit"
                   disabled={submitting}
@@ -260,7 +346,8 @@ function CreateDirectoryUserPage() {
               </div>
             </form>
       </section>
-    </AppShell>
+      </>)}
+    </div>
   )
 }
 
