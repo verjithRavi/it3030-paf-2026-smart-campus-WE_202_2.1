@@ -91,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public UnreadCountResponse getUnreadCount() {
         User user = getCurrentUser();
-        long count = notificationRepository.countByUserIdAndReadFalse(user.getId());
+        long count = notificationRepository.countByUserIdAndIsReadFalse(user.getId());
         return UnreadCountResponse.builder().count(count).build();
     }
 
@@ -108,7 +108,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead() {
         User user = getCurrentUser();
-        List<Notification> unread = notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(user.getId());
+        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(user.getId());
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }

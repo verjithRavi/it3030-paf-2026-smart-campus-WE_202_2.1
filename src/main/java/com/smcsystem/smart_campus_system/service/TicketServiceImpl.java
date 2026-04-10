@@ -9,6 +9,7 @@ import com.smcsystem.smart_campus_system.dto.request.UpdateTicketStatusRequest;
 import com.smcsystem.smart_campus_system.dto.response.TicketAttachmentResponse;
 import com.smcsystem.smart_campus_system.dto.response.TicketCommentResponse;
 import com.smcsystem.smart_campus_system.dto.response.TicketResponse;
+import com.smcsystem.smart_campus_system.enums.NotificationType;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.TicketStatus;
 import com.smcsystem.smart_campus_system.exception.BadRequestException;
@@ -48,6 +49,13 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final TicketCommentRepository ticketCommentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+
+    private void notifyAdmins(String title, String message, NotificationType type, String relatedEntityId) {
+        userRepository.findByRole(Role.ADMIN).forEach(admin ->
+            notificationService.createNotification(admin.getId(), title, message, type, relatedEntityId)
+        );
+    }
 
     @Value("${app.upload.dir:uploads/tickets}")
     private String uploadDir;
@@ -70,6 +78,14 @@ public class TicketServiceImpl implements TicketService {
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        notifyAdmins(
+            "New Support Ticket",
+            currentUser.getName() + " submitted a ticket for " + request.getResource().trim(),
+            NotificationType.TICKET_SUBMITTED,
+            savedTicket.getId()
+        );
+
         return mapToTicketResponse(savedTicket, false);
     }
 
@@ -149,6 +165,14 @@ public class TicketServiceImpl implements TicketService {
         ticket.setAssignedTechnicianId(technician.getId());
         Ticket updated = ticketRepository.save(ticket);
 
+        notificationService.createNotification(
+            technician.getId(),
+            "Ticket Assigned to You",
+            "You have been assigned a support ticket for " + ticket.getResource() + ". Please review and take action.",
+            NotificationType.TICKET_STATUS_CHANGED,
+            updated.getId()
+        );
+
         return mapToTicketResponse(updated, true);
     }
 
@@ -173,6 +197,18 @@ public class TicketServiceImpl implements TicketService {
 
         ticket.setStatus(newStatus);
         Ticket updated = ticketRepository.save(ticket);
+
+        // Notify creator (if they didn't update it themselves)
+        if (!currentUser.getId().equals(ticket.getCreatedBy())) {
+            notificationService.createNotification(
+                ticket.getCreatedBy(),
+                "Ticket Status Updated",
+                "Your ticket for " + ticket.getResource() + " is now " + newStatus.name().replace("_", " "),
+                NotificationType.TICKET_STATUS_CHANGED,
+                updated.getId()
+            );
+        }
+
         return mapToTicketResponse(updated, true);
     }
 
@@ -193,6 +229,15 @@ public class TicketServiceImpl implements TicketService {
         ticket.setResolutionNotes(request.getResolutionNotes().trim());
         ticket.setStatus(TicketStatus.RESOLVED);
         Ticket updated = ticketRepository.save(ticket);
+
+        notificationService.createNotification(
+            ticket.getCreatedBy(),
+            "Ticket Resolved",
+            "Your ticket for " + ticket.getResource() + " has been resolved.",
+            NotificationType.TICKET_STATUS_CHANGED,
+            updated.getId()
+        );
+
         return mapToTicketResponse(updated, true);
     }
 
@@ -213,6 +258,15 @@ public class TicketServiceImpl implements TicketService {
         ticket.setRejectionReason(request.getRejectionReason().trim());
         ticket.setStatus(TicketStatus.REJECTED);
         Ticket updated = ticketRepository.save(ticket);
+
+        notificationService.createNotification(
+            ticket.getCreatedBy(),
+            "Ticket Rejected",
+            "Your ticket for " + ticket.getResource() + " was rejected. Reason: " + request.getRejectionReason().trim(),
+            NotificationType.TICKET_STATUS_CHANGED,
+            updated.getId()
+        );
+
         return mapToTicketResponse(updated, true);
     }
 
@@ -231,6 +285,32 @@ public class TicketServiceImpl implements TicketService {
                 .build();
 
         TicketComment saved = ticketCommentRepository.save(comment);
+
+        String commenterId = currentUser.getId();
+
+        // Notify ticket creator (unless they are the commenter)
+        if (!commenterId.equals(ticket.getCreatedBy())) {
+            notificationService.createNotification(
+                ticket.getCreatedBy(),
+                "New Comment on Your Ticket",
+                currentUser.getName() + " commented on your ticket for " + ticket.getResource(),
+                NotificationType.TICKET_COMMENT_ADDED,
+                ticketId
+            );
+        }
+
+        // Notify assigned technician (unless they are the commenter)
+        String techId = ticket.getAssignedTechnicianId();
+        if (techId != null && !techId.equals(commenterId) && !techId.equals(ticket.getCreatedBy())) {
+            notificationService.createNotification(
+                techId,
+                "New Comment on Assigned Ticket",
+                currentUser.getName() + " commented on the ticket for " + ticket.getResource(),
+                NotificationType.TICKET_COMMENT_ADDED,
+                ticketId
+            );
+        }
+
         return mapToCommentResponse(saved);
     }
 
