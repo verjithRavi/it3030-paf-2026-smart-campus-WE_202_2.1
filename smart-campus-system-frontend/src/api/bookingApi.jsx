@@ -5,20 +5,17 @@ const API = axios.create({
   baseURL: "/api",
 });
 
-const fallbackUser = {
-  userId: "user001",
-  name: "Student User",
-  role: "USER",
-};
-
 function getBookingUser() {
-  const user = getCurrentUserData();
-  return user || fallbackUser;
+  return getCurrentUserData();
 }
 
 function getHeaders() {
   const user = getBookingUser();
   const token = getToken();
+
+  if (!user) {
+    throw new Error("Unable to find the current user session. Please sign in again.");
+  }
 
   const headers = {
     "X-USER-ID": user.userId || user.id,

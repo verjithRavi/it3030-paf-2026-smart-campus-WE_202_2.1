@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getToken, removeToken } from '../utils/token'
+import { getToken, removeToken, setCurrentUserData } from '../utils/token'
 
 const axiosInstance = axios.create({
   baseURL: '/api/v1',
@@ -43,6 +43,7 @@ export const loginUser = async (data) => {
 
 export const getCurrentUser = async () => {
   const response = await axiosInstance.get('/auth/me')
+  setCurrentUserData(response.data)
   return response.data
 }
 
