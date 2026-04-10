@@ -123,7 +123,11 @@ function DirectoryUserDetailsPage() {
   });
 
   const backPath = `/users/${category}`;
-const canEditApprovalStatus = category !== 'admins';
+  const canEditApprovalStatus = category !== 'admins';
+  const usesFacultyDepartmentOptions =
+    category === 'students' || category === 'lecturers';
+  const supportsDepartment =
+    usesFacultyDepartmentOptions || category === 'technicians';
   const entityLabel = config?.singularLabel || 'user';
   const entityLabelTitle =
     entityLabel.charAt(0).toUpperCase() + entityLabel.slice(1);
@@ -241,11 +245,19 @@ const canEditApprovalStatus = category !== 'admins';
     setMessage('');
 
     try {
+      const normalizedDepartment = form.department.trim();
+
+      if (supportsDepartment && !normalizedDepartment) {
+        setMessage('Department is required.');
+        setSaving(false);
+        return;
+      }
+
       const updatedUser = await updateManagedUser(user.id, {
         name: form.name,
         email: form.email,
         phoneNumber: form.phoneNumber || null,
-        department: form.department || null,
+        department: normalizedDepartment || null,
         pictureUrl: form.pictureUrl || null,
         userType: form.userType || null,
         approvalStatus: form.approvalStatus || null,
@@ -417,16 +429,27 @@ const canEditApprovalStatus = category !== 'admins';
                       )}
                     </div>
                     {/* Department — students only */}
-                    {['students', 'lecturers'].includes(category) && (
+                    {supportsDepartment && (
                       <div className="rounded-2xl border border-slate-100 bg-slate-50/85 px-4 py-3.5">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Department</p>
                         {editing ? (
-                          <select name="department" value={form.department} onChange={handleFormChange} className={INPUT_CLASS + ' mt-2'}>
-                            <option value="">Select department</option>
-                            {FACULTY_OPTIONS.map((f) => (
-                              <option key={f} value={f}>{f}</option>
-                            ))}
-                          </select>
+                          usesFacultyDepartmentOptions ? (
+                            <select name="department" value={form.department} onChange={handleFormChange} className={INPUT_CLASS + ' mt-2'}>
+                              <option value="">Select department</option>
+                              {FACULTY_OPTIONS.map((f) => (
+                                <option key={f} value={f}>{f}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              name="department"
+                              value={form.department}
+                              onChange={handleFormChange}
+                              placeholder="Department"
+                              className={INPUT_CLASS + ' mt-2'}
+                            />
+                          )
                         ) : (
                           <p className="mt-2 wrap-break-word text-sm font-medium text-slate-700">{formatValue(user.department)}</p>
                         )}

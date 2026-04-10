@@ -52,7 +52,6 @@ function CreateDirectoryUserPage() {
   const { category } = useParams()
   const config = createConfig[category]
 
-  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [formState, setFormState] = useState({
     name: '',
@@ -68,6 +67,8 @@ function CreateDirectoryUserPage() {
   const isStudentForm = category === 'students'
   const isLecturerForm = category === 'lecturers'
   const isAdminForm = category === 'admins'
+  const isTechnicianForm = category === 'technicians'
+  const requiresDepartment = isStudentForm || isLecturerForm || isTechnicianForm
 
   useEffect(() => {
     if (!config) {
@@ -92,7 +93,6 @@ function CreateDirectoryUserPage() {
           return
         }
 
-        setUser(currentUser)
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
           removeToken()
@@ -144,7 +144,7 @@ function CreateDirectoryUserPage() {
         return
       }
 
-      if ((isStudentForm || isLecturerForm) && !normalizedDepartment) {
+      if (requiresDepartment && !normalizedDepartment) {
         setFormError('Department is required.')
         setSubmitting(false)
         return
@@ -328,6 +328,16 @@ function CreateDirectoryUserPage() {
                     </option>
                   ))}
                 </select>
+              ) : isTechnicianForm ? (
+                <input
+                  type="text"
+                  name="department"
+                  value={formState.department}
+                  onChange={handleChange}
+                  placeholder="Department"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f6e73] focus:ring-4 focus:ring-teal-100"
+                  required
+                />
               ) : isAdminForm ? null : null}
 
               <div className="md:col-span-2">
