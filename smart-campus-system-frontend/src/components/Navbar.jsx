@@ -17,6 +17,8 @@ const studentNavItems = [
 
 const technicianNavItems = [
   { label: 'Home', path: '/home' },
+  { label: 'New Booking', path: '/bookings/new' },
+  { label: 'My Bookings', path: '/bookings/my' },
   { label: 'Assigned Tickets', path: '/technician/tickets' },
   { label: 'Notifications', path: '/notifications' },
   { label: 'Profile', path: '/profile' },

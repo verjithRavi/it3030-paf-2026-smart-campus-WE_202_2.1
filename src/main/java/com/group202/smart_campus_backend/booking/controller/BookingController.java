@@ -91,6 +91,15 @@ public class BookingController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Booking> getBookingById(
+            @PathVariable String id,
+            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-USER-ROLE") String role
+    ) {
+        return ResponseEntity.ok(bookingService.getBookingById(id, userId, role));
+    }
+
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> testRoute() {
         Map<String, String> response = new LinkedHashMap<>();
