@@ -7,6 +7,7 @@ import BookingTable from '../components/BookingTable'
 import RejectModal from '../components/RejectModal'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
+import StatCard from '../components/ui/StatCard'
 
 const initialFilters = {
   status: "",
@@ -150,6 +151,32 @@ export default function AdminBookingsPage() {
         title="Admin booking management"
         subtitle="Review, filter, approve, reject, cancel, and delete booking requests."
       />
+
+      {/* Stats — counts from currently loaded bookings, clickable to filter */}
+      <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {[
+          { label: 'Total',     sub: 'All bookings',       status: '',           count: bookings.length },
+          { label: 'Pending',   sub: 'Awaiting review',    status: 'PENDING',    count: bookings.filter(b => b.status === 'PENDING').length },
+          { label: 'Approved',  sub: 'Confirmed',          status: 'APPROVED',   count: bookings.filter(b => b.status === 'APPROVED').length },
+          { label: 'Rejected',  sub: 'Declined requests',  status: 'REJECTED',   count: bookings.filter(b => b.status === 'REJECTED').length },
+          { label: 'Cancelled', sub: 'Cancelled bookings', status: 'CANCELLED',  count: bookings.filter(b => b.status === 'CANCELLED').length },
+        ].map(({ label, sub, status, count }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => {
+              const next = { ...initialFilters, status }
+              setFilters(next)
+              loadBookings(next)
+            }}
+            className={`text-left transition-opacity hover:opacity-80 focus:outline-none ${
+              filters.status === status ? 'ring-2 ring-[#0F6E56] ring-offset-2 rounded-3xl' : ''
+            }`}
+          >
+            <StatCard label={label} value={count} sub={sub} />
+          </button>
+        ))}
+      </div>
 
       <section className="mb-5 grid gap-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-[0_16px_50px_rgba(15,23,42,0.06)] md:grid-cols-2 xl:grid-cols-5">
         <div className="flex flex-col gap-2">
