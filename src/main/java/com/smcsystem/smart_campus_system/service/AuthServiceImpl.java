@@ -18,7 +18,6 @@ import com.smcsystem.smart_campus_system.enums.RegistrationType;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.enums.UserType;
 import com.smcsystem.smart_campus_system.exception.BadRequestException;
-import com.smcsystem.smart_campus_system.exception.ResourceNotFoundException;
 import com.smcsystem.smart_campus_system.exception.UnauthorizedException;
 import com.smcsystem.smart_campus_system.model.User;
 import com.smcsystem.smart_campus_system.repository.NotificationRepository;
