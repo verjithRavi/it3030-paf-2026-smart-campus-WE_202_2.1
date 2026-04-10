@@ -8,6 +8,10 @@ import com.group202.smart_campus_backend.common.exception.BadRequestException;
 import com.group202.smart_campus_backend.common.exception.ConflictException;
 import com.group202.smart_campus_backend.common.exception.ForbiddenException;
 import com.group202.smart_campus_backend.common.exception.ResourceNotFoundException;
+import com.smcsystem.smart_campus_system.enums.NotificationType;
+import com.smcsystem.smart_campus_system.enums.Role;
+import com.smcsystem.smart_campus_system.repository.UserRepository;
+import com.smcsystem.smart_campus_system.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +27,14 @@ import java.util.stream.Collectors;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
+
+    private void notifyAdmins(String title, String message, NotificationType type, String relatedEntityId) {
+        userRepository.findByRole(Role.ADMIN).forEach(admin ->
+            notificationService.createNotification(admin.getId(), title, message, type, relatedEntityId)
+        );
+    }
 
     public Booking createBooking(CreateBookingRequest request, String userId, String userName) {
         validateTimeConflict(
@@ -51,7 +63,24 @@ public class BookingService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        notifyAdmins(
+            "New Booking Request",
+            userName + " requested " + request.getResourceName() + " on " + request.getBookingDate(),
+            NotificationType.BOOKING_SUBMITTED,
+            saved.getId()
+        );
+
+        return saved;
+    }
+
+    // Resolves the booking owner's MongoDB ObjectId from their public username stored in bookings
+    private void notifyBookingOwner(String publicUserId, String title, String message,
+                                    NotificationType type, String relatedEntityId) {
+        userRepository.findByUsername(publicUserId).ifPresent(owner ->
+            notificationService.createNotification(owner.getId(), title, message, type, relatedEntityId)
+        );
     }
 
     public List<Booking> getMyBookings(String userId) {
@@ -93,7 +122,17 @@ public class BookingService {
         booking.setAdminReason(null);
         booking.setUpdatedAt(LocalDateTime.now());
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        notifyBookingOwner(
+            booking.getUserId(),
+            "Booking Approved",
+            "Your booking for " + booking.getResourceName() + " on " + booking.getBookingDate() + " has been approved.",
+            NotificationType.BOOKING_APPROVED,
+            saved.getId()
+        );
+
+        return saved;
     }
 
     public Booking rejectBooking(String bookingId, String role, String reason) {
@@ -113,7 +152,17 @@ public class BookingService {
         booking.setAdminReason(reason.trim());
         booking.setUpdatedAt(LocalDateTime.now());
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        notifyBookingOwner(
+            booking.getUserId(),
+            "Booking Rejected",
+            "Your booking for " + booking.getResourceName() + " on " + booking.getBookingDate() + " was rejected. Reason: " + reason.trim(),
+            NotificationType.BOOKING_REJECTED,
+            saved.getId()
+        );
+
+        return saved;
     }
 
     public Booking cancelBooking(String bookingId, String currentUserId, String currentRole, String cancelReason) {
@@ -136,7 +185,28 @@ public class BookingService {
         }
         booking.setUpdatedAt(LocalDateTime.now());
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        if (isAdmin) {
+            // Admin cancelled — notify the booking owner
+            notifyBookingOwner(
+                booking.getUserId(),
+                "Booking Cancelled",
+                "Your booking for " + booking.getResourceName() + " on " + booking.getBookingDate() + " has been cancelled by admin.",
+                NotificationType.BOOKING_CANCELLED,
+                saved.getId()
+            );
+        } else {
+            // Owner cancelled — notify admins
+            notifyAdmins(
+                "Booking Cancelled",
+                booking.getUserName() + " cancelled their booking for " + booking.getResourceName() + " on " + booking.getBookingDate() + ".",
+                NotificationType.BOOKING_CANCELLED,
+                saved.getId()
+            );
+        }
+
+        return saved;
     }
 
     public void deleteBooking(String bookingId, String currentUserId, String currentRole) {
