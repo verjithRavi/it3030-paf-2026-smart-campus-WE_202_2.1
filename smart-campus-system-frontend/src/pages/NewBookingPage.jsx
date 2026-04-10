@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { bookingApi, getErrorMessage } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
-import AppShell from '../components/AppShell'
+
 import BookingForm from '../components/BookingForm'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
@@ -46,16 +46,11 @@ export default function NewBookingPage() {
     }
   }
 
-  if (pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
   return (
-    <AppShell user={user}>
+    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+      {pageLoading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
       <PageHeader
         title="Create booking"
         subtitle="Reserve a lab, room, lecture hall, or equipment with all the details admins need."
@@ -108,6 +103,7 @@ export default function NewBookingPage() {
       )}
 
       <BookingForm onSubmit={handleCreateBooking} loading={loading} />
-    </AppShell>
+      </>)}
+    </div>
   )
 }

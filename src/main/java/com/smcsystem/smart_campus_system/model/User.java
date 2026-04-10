@@ -31,6 +31,9 @@ public class User {
     @Indexed(unique = true)
     private String email;
 
+    @Indexed(unique = true, sparse = true)
+    private String username;
+
     private String password;
 
     private Role role;

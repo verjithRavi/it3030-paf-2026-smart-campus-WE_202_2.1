@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { bookingApi, getErrorMessage } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
-import AppShell from '../components/AppShell'
+
 import BookingTable from '../components/BookingTable'
 import PageHeader from '../components/ui/PageHeader'
 import Spinner from '../components/ui/Spinner'
@@ -67,16 +67,11 @@ export default function MyBookingsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
-
   return (
-    <AppShell user={user}>
+    <div className="mx-auto w-full max-w-[1320px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
       <PageHeader
         title="My bookings"
         subtitle="Keep track of requests, cancellations, and approvals from one place."
@@ -114,6 +109,7 @@ export default function MyBookingsPage() {
         onCancel={handleCancel}
         onDelete={handleDelete}
       />
-    </AppShell>
+      </>)}
+    </div>
   )
 }

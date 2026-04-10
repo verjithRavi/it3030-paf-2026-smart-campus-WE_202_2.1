@@ -5,6 +5,7 @@ import com.smcsystem.smart_campus_system.enums.AuthProvider;
 import com.smcsystem.smart_campus_system.enums.Role;
 import com.smcsystem.smart_campus_system.model.User;
 import com.smcsystem.smart_campus_system.repository.UserRepository;
+import com.smcsystem.smart_campus_system.service.UserIdentityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ public class AdminBootstrapConfig {
     @Bean
     CommandLineRunner bootstrapAdmin(
             UserRepository userRepository,
+            UserIdentityService userIdentityService,
             PasswordEncoder passwordEncoder,
             @Value("${app.bootstrap.admin.enabled:true}") boolean enabled,
             @Value("${app.bootstrap.admin.name:Local Admin}") String adminName,
@@ -50,6 +52,7 @@ public class AdminBootstrapConfig {
             User admin = User.builder()
                     .name(adminName.trim())
                     .email(normalizedEmail)
+                    .username(null)
                     .password(passwordEncoder.encode(adminPassword))
                     .role(Role.ADMIN)
                     .authProvider(AuthProvider.LOCAL)
@@ -58,7 +61,8 @@ public class AdminBootstrapConfig {
                     .approvalStatus(ApprovalStatus.APPROVED)
                     .build();
 
-            userRepository.save(admin);
+            User savedAdmin = userRepository.save(admin);
+            userIdentityService.ensureUserIdAndSave(savedAdmin);
 
             logger.warn("Created bootstrap admin for local development: email='{}' password='{}'", normalizedEmail, adminPassword);
         };

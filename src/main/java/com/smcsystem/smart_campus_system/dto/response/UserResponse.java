@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 public class UserResponse {
 
     private String id;
+    private String internalId;
     private String name;
     private String email;
     private Role role;

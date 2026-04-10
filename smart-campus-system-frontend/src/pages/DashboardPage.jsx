@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { getCurrentUser, submitAccessRequest } from '../api/authApi';
 import { bookingApi } from '../api/bookingApi';
 import { getNotifications, getUnreadCount } from '../api/notificationApi';
-import AppShell from '../components/AppShell';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import EmptyState from '../components/ui/EmptyState';
@@ -42,7 +41,6 @@ function DashboardPage() {
         setError('Unable to load your dashboard right now.');
         setLoading(false);
         return;
-      } finally {
       }
 
       try {
@@ -80,16 +78,15 @@ function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F3F7F5]">
-        <Spinner size="lg" />
-      </div>
-    );
+  if (!loading && user && user.role !== 'ADMIN') {
+    return <Navigate to="/home" replace />;
   }
 
   return (
-    <AppShell user={user} contentClassName="w-full max-w-[1200px] px-6 py-6">
+    <div className="mx-auto w-full max-w-[1200px] px-6 py-6">
+      {loading ? (
+        <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>
+      ) : (<>
           {error && (
             <div className="mb-5 rounded-2xl border border-[#E24B4A] bg-[#FCEBEB] p-4 text-sm text-[#A32D2D]">
               {error}
@@ -197,7 +194,7 @@ function DashboardPage() {
                 user?.approvalStatus !== 'PENDING' && (
                   <div className="mt-5">
                     <p className="mb-2 text-xs text-gray-500">
-                      Want student or lecturer access?
+                      Need student access?
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -205,12 +202,6 @@ function DashboardPage() {
                         className="rounded-full border border-gray-200 px-4 py-2 text-xs text-gray-700"
                       >
                         Request Student
-                      </button>
-                      <button
-                        onClick={() => handleAccessRequest('LECTURER')}
-                        className="rounded-full border border-gray-200 px-4 py-2 text-xs text-gray-700"
-                      >
-                        Request Lecturer
                       </button>
                     </div>
                     {requestMessage && (
@@ -263,7 +254,8 @@ function DashboardPage() {
               </section>
             )}
           </div>
-    </AppShell>
+      </>)}
+    </div>
   );
 }
 

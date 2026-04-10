@@ -5,6 +5,15 @@ import AuthLayout from '../components/AuthLayout';
 import Spinner from '../components/ui/Spinner';
 import { INPUT_CLASS, PRIMARY_BTN } from '../constants/theme';
 
+const FACULTY_OPTIONS = [
+  'Faculty of Computing',
+  'Faculty of Business',
+  'Faculty of Engineering',
+  'Faculty of Humanities & Sciences',
+  'Faculty of Architecture',
+  'Faculty of Hospitality & Culinary',
+];
+
 function RegisterPage() {
   const navigate = useNavigate();
 
@@ -14,7 +23,6 @@ function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [department, setDepartment] = useState('');
-  const [userType, setUserType] = useState('STUDENT');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -22,6 +30,7 @@ function RegisterPage() {
   const validateForm = () => {
     const nextErrors = {};
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phonePattern = /^\d{10}$/;
 
     if (!name.trim()) {
       nextErrors.name = 'Name is required';
@@ -43,6 +52,16 @@ function RegisterPage() {
       nextErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
       nextErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!phoneNumber.trim()) {
+      nextErrors.phoneNumber = 'Phone number is required';
+    } else if (!phonePattern.test(phoneNumber.trim())) {
+      nextErrors.phoneNumber = 'Phone number must contain exactly 10 digits';
+    }
+
+    if (!department.trim()) {
+      nextErrors.department = 'Department is required';
     }
 
     setFieldErrors(nextErrors);
@@ -67,8 +86,7 @@ function RegisterPage() {
         confirmPassword,
         phoneNumber: phoneNumber.trim(),
         department: department.trim(),
-        userType,
-        registrationType: userType,
+        registrationType: 'STUDENT',
       });
       navigate('/?registered=true');
     } catch (error) {
@@ -91,15 +109,10 @@ function RegisterPage() {
     window.location.href = '/oauth2/authorization/google';
   };
 
-  const typeCardClass = (type) =>
-    userType === type
-      ? 'border-[#1D9E75] bg-[#E1F5EE] text-[#0F6E56] font-medium'
-      : 'border-gray-200 text-gray-500 hover:border-gray-300';
-
   return (
     <AuthLayout>
       <h1 className="text-xl font-medium text-gray-900">Create account</h1>
-      <p className="mb-5 text-sm text-gray-400">Join Smart Campus</p>
+      <p className="mb-5 text-sm text-gray-400">Student self-registration for Smart Campus</p>
 
       <button
         type="button"
@@ -195,11 +208,16 @@ function RegisterPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Phone number (optional)"
+            type="tel"
+            inputMode="numeric"
+            maxLength={10}
+            placeholder="Phone number"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) =>
+              setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))
+            }
             className={INPUT_CLASS}
+            required
           />
           {fieldErrors.phoneNumber && (
             <p className="mt-1 text-xs text-[#A32D2D]">
@@ -209,13 +227,19 @@ function RegisterPage() {
         </div>
 
         <div>
-          <input
-            type="text"
-            placeholder="Department (optional)"
+          <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
             className={INPUT_CLASS}
-          />
+            required
+          >
+            <option value="">Select department</option>
+            {FACULTY_OPTIONS.map((faculty) => (
+              <option key={faculty} value={faculty}>
+                {faculty}
+              </option>
+            ))}
+          </select>
           {fieldErrors.department && (
             <p className="mt-1 text-xs text-[#A32D2D]">
               {fieldErrors.department}
@@ -223,40 +247,8 @@ function RegisterPage() {
           )}
         </div>
 
-        <div>
-          <p className="mb-1 text-xs font-medium text-gray-500">I am a</p>
-          <div className="grid grid-cols-2 gap-2">
-            <label
-              className={`cursor-pointer rounded-xl border p-3 text-center text-sm transition ${typeCardClass(
-                'STUDENT'
-              )}`}
-            >
-              <input
-                type="radio"
-                name="userType"
-                value="STUDENT"
-                checked={userType === 'STUDENT'}
-                onChange={(e) => setUserType(e.target.value)}
-                className="sr-only"
-              />
-              Student
-            </label>
-            <label
-              className={`cursor-pointer rounded-xl border p-3 text-center text-sm transition ${typeCardClass(
-                'LECTURER'
-              )}`}
-            >
-              <input
-                type="radio"
-                name="userType"
-                value="LECTURER"
-                checked={userType === 'LECTURER'}
-                onChange={(e) => setUserType(e.target.value)}
-                className="sr-only"
-              />
-              Lecturer
-            </label>
-          </div>
+        <div className="rounded-xl border border-[#1D9E75] bg-[#E1F5EE] p-3 text-sm text-[#0F6E56]">
+          Public registration is available for students only. Lecturer, technician, and admin accounts must be created by an administrator.
         </div>
 
         {error && (
