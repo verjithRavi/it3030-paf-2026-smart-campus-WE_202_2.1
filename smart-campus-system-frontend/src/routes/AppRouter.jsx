@@ -21,6 +21,11 @@ import MyTicketsPage from '../pages/MyTicketsPage';
 import TicketDetailsPage from '../pages/TicketDetailsPage';
 import AdminTicketsPage from '../pages/AdminTicketsPage';
 import TechnicianTicketsPage from '../pages/TechnicianTicketsPage';
+import ResourceListPage from '../pages/ResourceListPage';
+import ResourceManagementPage from '../pages/ResourceManagementPage';
+import CreateResourcePage from '../pages/CreateResourcePage';
+import ResourceBookingPage from '../pages/ResourceBookingPage';
+import BookingManagementPage from '../pages/BookingManagementPage';
 import { getToken } from '../utils/token';
 
 function ProtectedRoute() {
@@ -57,6 +62,11 @@ function AppRouter() {
             <Route path="/tickets/:id" element={<TicketDetailsPage />} />
             <Route path="/admin/tickets" element={<AdminTicketsPage />} />
             <Route path="/technician/tickets" element={<TechnicianTicketsPage />} />
+            <Route path="/resources" element={<ResourceListPage />} />
+            <Route path="/resources/booking" element={<ResourceBookingPage />} />
+            <Route path="/admin/resources" element={<ResourceManagementPage />} />
+            <Route path="/admin/resources/create" element={<CreateResourcePage />} />
+            <Route path="/admin/bookings/manage" element={<BookingManagementPage />} />
           </Route>
         </Route>
 

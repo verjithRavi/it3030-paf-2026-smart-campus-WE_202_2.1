@@ -23,6 +23,23 @@ function Icon({ type }) {
     );
   }
 
+  if (type === 'resources') {
+    return (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      >
+        <path d="M3 4h14M3 8h10M3 12h6" strokeLinecap="round" />
+        <circle cx="16" cy="16" r="2" />
+        <path d="M14 14l2 2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
   if (type === 'check') {
     return (
       <svg
@@ -100,6 +117,8 @@ function AdminSidebar() {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: 'grid' },
+    { label: 'Resource Management', path: '/admin/resources', icon: 'resources' },
+    { label: 'Booking Management', path: '/admin/bookings/manage', icon: 'check' },
     {
       label: 'Booking approvals',
       path: '/admin/bookings',

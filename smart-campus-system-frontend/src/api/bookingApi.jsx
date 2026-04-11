@@ -2,7 +2,7 @@ import axios from "axios";
 import { getCurrentUserData, getToken } from "../utils/token";
 
 const API = axios.create({
-  baseURL: "/api",
+  baseURL: "/api/v1",
 });
 
 function getBookingUser() {

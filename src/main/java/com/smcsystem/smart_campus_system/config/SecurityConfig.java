@@ -34,15 +34,16 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",
+                                "/api/v1/debug/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/notifications/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth -> oauth
-                        .successHandler(oAuth2SuccessHandler)
-                )
+                //.oauth2Login(oauth -> oauth
+                //        .successHandler(oAuth2SuccessHandler)
+                //)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
