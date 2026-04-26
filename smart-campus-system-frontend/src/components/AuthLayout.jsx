@@ -8,9 +8,13 @@ export default function AuthLayout({ children, title, subtitle }) {
         <div>
           <div className="relative flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/12 ring-1 ring-white/20">
-              <div className="h-4 w-4 rounded-md bg-white" />
+              <div className="h-4 w-4 rounded-md bg-white flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 20 20" fill="none" className="text-[#0F6E56]">
+                  <path d="M3 12l2-2l7 7 7s3 9l-7 7-7a1 1 0 011-3 7-7 7-4a1 1 0 012 4 16-8 4-4a1 1 0 021 4 4-2 2 2a1 1 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
-            <span className="text-sm font-semibold uppercase tracking-[0.22em] text-white/90">Smart Campus</span>
+            <span className="text-sm font-bold uppercase tracking-[0.22em] text-white">Campus Connect</span>
           </div>
 
           <div className="relative mt-16 max-w-lg">

@@ -1,7 +1,5 @@
 package com.smcsystem.smart_campus_system.exception;
 
-import com.group202.smart_campus_backend.common.exception.ConflictException;
-import com.group202.smart_campus_backend.common.exception.ForbiddenException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,43 +19,27 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(com.group202.smart_campus_backend.common.exception.BadRequestException.class)
-    public ResponseEntity<Map<String, Object>> handleBookingBadRequest(
-            com.group202.smart_campus_backend.common.exception.BadRequestException ex
-    ) {
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-    @ExceptionHandler(ResourceNotFoundException.class)
+    @ExceptionHandler(com.smcsystem.smart_campus_system.exception.ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(com.group202.smart_campus_backend.common.exception.ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleBookingNotFound(
-            com.group202.smart_campus_backend.common.exception.ResourceNotFoundException ex
-    ) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedException.class)
+    @ExceptionHandler(com.smcsystem.smart_campus_system.exception.UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
     @ExceptionHandler(DuplicateKeyException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateKey(DuplicateKeyException ex) {
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Email is already registered");
+        String message = ex.getMessage();
+        if (message != null) {
+            if (message.contains("resourceId")) {
+                return buildErrorResponse(HttpStatus.BAD_REQUEST, "Resource ID already exists");
+            } else if (message.contains("email")) {
+                return buildErrorResponse(HttpStatus.BAD_REQUEST, "Email is already registered");
+            }
+        }
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Duplicate entry: " + message);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

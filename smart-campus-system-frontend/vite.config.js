@@ -6,10 +6,14 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': { target: 'http://localhost:8080', changeOrigin: true },
-      '/api/v1': { target: 'http://localhost:8080', changeOrigin: true },
-      '/oauth2': { target: 'http://localhost:8080', changeOrigin: true },
-      '/login/oauth2': { target: 'http://localhost:8080', changeOrigin: true },
+      '/api/bookings': { 
+        target: 'http://localhost:8081', 
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api/v1')
+      },
+      '/api/v1': { target: 'http://localhost:8081', changeOrigin: true },
+      '/oauth2': { target: 'http://localhost:8081', changeOrigin: true },
+      '/login/oauth2': { target: 'http://localhost:8081', changeOrigin: true },
     },
   },
 })

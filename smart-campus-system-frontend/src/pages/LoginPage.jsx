@@ -37,7 +37,6 @@ function LoginPage() {
       const normalizedIdentifier = identifier.trim();
       const data = await loginUser({
         identifier: normalizedIdentifier,
-        email: normalizedIdentifier,
         password,
       });
       setAuthSession(data);

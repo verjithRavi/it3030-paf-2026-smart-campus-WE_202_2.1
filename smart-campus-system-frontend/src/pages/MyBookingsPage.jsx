@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { bookingApi, getErrorMessage } from '../api/bookingApi'
 import { getCurrentUser } from '../api/authApi'
+import NotificationService from '../services/notificationService'
 
 import BookingTable from '../components/BookingTable'
 import CancelModal from '../components/CancelModal'
@@ -32,10 +32,20 @@ export default function MyBookingsPage() {
     try {
       setLoading(true)
       setErrorMessage('')
-      const [currentUser, data] = await Promise.all([
-        getCurrentUser(),
-        bookingApi.getMyBookings(),
-      ])
+      const currentUser = await getCurrentUser();
+      
+      // Get user bookings using new API
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/v1/bookings/user/${currentUser.userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      let data = [];
+      if (response.ok) {
+        data = await response.json();
+      }
       setUser(currentUser)
       setBookings(data)
     } catch (error) {
@@ -56,10 +66,22 @@ export default function MyBookingsPage() {
       setCancelLoading(true)
       setMessage('')
       setErrorMessage('')
-      await bookingApi.cancelBooking(cancelModal.bookingId, reason || null)
-      setCancelModal({ open: false, bookingId: null })
-      setMessage('Booking cancelled successfully.')
-      loadBookings()
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/v1/bookings/${cancelModal.bookingId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setCancelModal({ open: false, bookingId: null })
+        setMessage('Booking cancelled successfully.')
+        NotificationService.createNotification('Booking cancelled successfully', 'success');
+        loadBookings()
+      } else {
+        throw new Error('Failed to cancel booking');
+      }
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     } finally {
@@ -73,9 +95,21 @@ export default function MyBookingsPage() {
     try {
       setMessage('')
       setErrorMessage('')
-      await bookingApi.deleteBooking(bookingId)
-      setMessage('Booking deleted successfully.')
-      loadBookings()
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/v1/bookings/${bookingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        setMessage('Booking deleted successfully.')
+        NotificationService.createNotification('Booking deleted successfully', 'success');
+        loadBookings()
+      } else {
+        throw new Error('Failed to delete booking');
+      }
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     }

@@ -8,6 +8,7 @@ import { getCurrentUserData, removeToken, setCurrentUserData } from '../utils/to
 
 const studentNavItems = [
   { label: 'Home', path: '/home' },
+  { label: 'Resources', path: '/resources' },
   { label: 'New Booking', path: '/bookings/new' },
   { label: 'My Bookings', path: '/bookings/my' },
   { label: 'My Tickets', path: '/tickets/my' },
@@ -17,6 +18,7 @@ const studentNavItems = [
 
 const technicianNavItems = [
   { label: 'Home', path: '/home' },
+  { label: 'Resources', path: '/resources' },
   { label: 'New Booking', path: '/bookings/new' },
   { label: 'My Bookings', path: '/bookings/my' },
   { label: 'Assigned Tickets', path: '/technician/tickets' },
@@ -166,6 +168,19 @@ function Navbar() {
                   />
                 </svg>
                 <span>{isAdmin ? 'Dashboard' : 'Home'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate('/resources');
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M3 4h14M3 8h10M3 12h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <span>Browse Resources</span>
               </button>
 
               <button
